@@ -1,4 +1,5 @@
 .pio
+/.local/
 include/Secrets.h
 build-tests/
 .vscode/.browse.c_cpp.db*
