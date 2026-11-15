@@ -1,214 +1,259 @@
-# 🗑️ Smart Trash Can — ESP32 IoT
+# Smart Trash Can — ESP32 IoT và ứng dụng mobile
 
-Mô phỏng thùng rác thông minh với **ESP32**, **PlatformIO** và **Wokwi**: tự động đóng/mở nắp, theo dõi mức rác, cảnh báo chỉ số khí và truyền trạng thái qua MQTT để xem trên trình duyệt.
+Dự án mô phỏng thùng rác thông minh bằng ESP32, PlatformIO và Wokwi, kèm ứng dụng React Native + Expo để quản lý danh sách thùng và theo dõi MQTT.
 
-> **Trạng thái:** firmware đã build thành công và kiểm thử logic trên máy tính đã pass. Các ca chạy tương tác Wokwi, servo và nhận MQTT từ thiết bị mô phỏng còn chờ xác minh. Chi tiết tại [bảng kiểm thử](docs/TEST_CASES.md).
+**Audit local: 15/11/2026.** Đã có firmware và app; build/logic test pass. Chưa xác minh chạy tương tác Wokwi, điện thoại/emulator hoặc toàn bộ luồng ESP32 → broker → app. Đây là bản phục vụ mô phỏng/demo, chưa phải bản triển khai production.
 
-## 📑 Nội dung
+## Mục lục
 
-- [Chức năng](#-chức-năng)
-- [Kiến trúc](#-kiến-trúc)
-- [Công nghệ và linh kiện](#-công-nghệ-và-linh-kiện)
-- [Cấu trúc dự án](#-cấu-trúc-dự-án)
-- [Cài đặt và chạy](#-cài-đặt-và-chạy)
-- [Theo dõi MQTT trên trình duyệt](#-theo-dõi-mqtt-trên-trình-duyệt)
-- [Thuật toán và cấu hình](#-thuật-toán-và-cấu-hình)
-- [Kiểm thử](#-kiểm-thử)
-- [Xử lý sự cố](#-xử-lý-sự-cố)
-- [Bảo mật và giới hạn](#-bảo-mật-và-giới-hạn)
+1. [Kết quả audit và tiến độ](#audit)
+2. [Kiến trúc và công nghệ](#architecture)
+3. [Cấu trúc dự án](#structure)
+4. [Chức năng và cấu hình firmware](#firmware)
+5. [Chức năng mobile](#mobile)
+6. [Hướng dẫn chạy firmware và Wokwi](#run-firmware)
+7. [Hướng dẫn chạy ứng dụng mobile](#run-mobile)
+8. [Kết nối MQTT và dữ liệu](#mqtt)
+9. [Kiểm thử và kết quả xác minh](#tests)
+10. [Giới hạn và việc cần làm tiếp](#remaining)
+11. [Xử lý sự cố](#troubleshooting)
+12. [Tài liệu liên quan](#docs)
 
-## ✨ Chức năng
+<a id="audit"></a>
+## 1. Kết quả audit và tiến độ
 
-| Chức năng | Hành vi |
-| --- | --- |
-| Mở nắp không tiếp xúc | Tay cách cảm biến ≤20 cm liên tục 500 ms thì gửi lệnh mở servo |
-| Giữ nắp mở | Còn tay trong vùng nhận diện thì giữ mở |
-| Tự đóng nắp | Đóng sau khoảng 3 giây khi tay rời vùng nhận diện; tay quay lại sẽ hủy đếm đóng |
-| Theo dõi mức rác | Đo khoảng cách mỗi 2 giây khi nắp đóng ổn định, ước tính mức đầy 0–100% |
-| Cảnh báo đầy | Bật khi mức rác ≥80%, xóa khi giảm xuống ≤75% |
-| Cảnh báo khí | Bật khi ADC >2000, xóa khi ADC ≤1800; hoạt động độc lập với cảnh báo đầy |
-| Theo dõi từ xa | Gửi trạng thái, sự kiện và tình trạng kết nối qua MQTT |
-| Hoạt động khi mất mạng | Điều khiển nắp tiếp tục; tác vụ mạng tự thử kết nối lại |
-| Nhận biết dữ liệu lỗi | Đánh dấu mẫu không hợp lệ hoặc đã cũ, tránh suy ra thùng rỗng khi cảm biến lỗi |
+Đối chiếu mã nguồn, cấu hình, test và tài liệu trong working tree. “Đã triển khai” nghĩa là có code, không đồng nghĩa đã kiểm chứng trên phần cứng.
 
-Chỉ số khí trong mô phỏng được tạo bằng **biến trở**, chưa phải phép đo MQ-135 thực tế.
+| Thứ tự | Hạng mục | Đã triển khai | Mức xác minh |
+| --- | --- | --- | --- |
+| 1 | Điều khiển nắp | Máy trạng thái, xác nhận tay, giữ mở, tự đóng, giữ mở khi cảm biến tay lỗi | Host test pass; chuyển động servo chưa xác minh |
+| 2 | Driver cảm biến | Echo bằng ISR, timeout, xen kẽ hai HC-SR04, đọc ADC | Build pass; ISR/nhiễu chéo cần chạy runtime |
+| 3 | Môi trường | Quy đổi mức đầy, hai cảnh báo đầy/khí độc lập có hysteresis, mẫu invalid/stale | Host test pass; khí là biến trở mô phỏng |
+| 4 | Wi-Fi/MQTT | Task FreeRTOS riêng, reconnect/backoff, JSON, state/events/availability | Build pass; chưa xác minh gateway và reconnect end-to-end |
+| 5 | Mô phỏng | Sơ đồ ESP32, 2 HC-SR04, servo, biến trở và cấu hình BIN/ELF | Có cấu hình; W01–W12 còn chờ chạy |
+| 6 | App quản lý | Danh sách/chi tiết, thêm/sửa/xóa, tìm kiếm, lọc cảnh báo, thống kê | Có giao diện; chưa chạy điện thoại/emulator trong audit |
+| 7 | App theo dõi | MQTT WSS, kiểm tra schema/device ID, trạng thái offline/cũ, reconnect theo lifecycle | Typecheck và model test pass; hook MQTT/UI chưa có test tự động |
+| 8 | Lưu trữ và demo | AsyncStorage lưu danh sách/broker; demo tách khỏi MQTT | Có code; lưu trữ và foreground/background cần kiểm tra thực tế |
+| 9 | Đóng gói và tài liệu | Hướng dẫn Expo Go, emulator, native và EAS APK | Chưa có eas.json, APK/IPA, backend hoặc triển khai production |
 
-## 🧭 Kiến trúc
+<a id="architecture"></a>
+## 2. Kiến trúc và công nghệ
 
 ```mermaid
 flowchart TD
     H[HC-SR04 nhận diện tay] --> C[ESP32: điều khiển cục bộ]
     T[HC-SR04 đo mức rác] --> C
     G[Biến trở giả lập khí] --> C
-    C --> S[Servo nắp thùng]
+    C --> S[Servo nắp]
     C --> L[Serial Monitor]
-    C --> Q[Queue trạng thái và sự kiện]
-    Q --> N[Tác vụ Wi-Fi / MQTT]
+    C --> Q[Queue snapshot và sự kiện]
+    Q --> N[Task Wi-Fi / MQTT]
     N --> W[Wokwi Public Gateway]
-    W --> B[MQTT Broker]
-    B --> V[MQTT WebSocket Client trên trình duyệt]
+    W --> B[MQTT broker]
+    B --> A[Ứng dụng Expo / MQTT WebSocket client]
+    A --> D[AsyncStorage: danh sách và broker]
 ```
 
-- **Điều khiển cục bộ:** vòng lặp trên core 1 đọc cảm biến và điều khiển servo; các mốc thời gian dùng `millis()`.
-- **Đo siêu âm:** bắt cạnh echo bằng ngắt và timestamp `micros()`, có timeout. Hai cảm biến phát luân phiên để giảm nguy cơ nhiễu chéo.
-- **Truyền dữ liệu:** tác vụ FreeRTOS riêng trên core 0 xử lý Wi-Fi/MQTT và nhận dữ liệu qua queue. Kết nối mạng có thể chờ trong tác vụ này.
-- **Gateway:** đưa kết nối của ESP32 mô phỏng ra mạng; không cần thêm một board gateway vật lý.
-- **Broker:** nhận và phân phối bản tin MQTT. Trình duyệt kết nối broker bằng MQTT qua WebSocket để xem dữ liệu.
+- Vòng điều khiển trên core 1 dùng `millis()`; echo bắt cạnh bằng ngắt và `micros()`, không chờ bằng `pulseIn()`.
+- Task mạng trên core 0 nhận dữ liệu qua queue; chờ kết nối mạng diễn ra trong task riêng. Trigger siêu âm có chờ cố định khoảng 12 µs, vòng điều khiển nhường CPU bằng `delay(1)`.
+- Gateway nối ESP32 mô phỏng ra Internet, không cần thêm board gateway vật lý. App kết nối trực tiếp broker; chưa có backend.
 
-Vòng điều khiển không dùng `pulseIn()` để chờ echo. Xung trigger có thời gian chờ cố định khoảng 12 µs và vòng lặp có lệnh nhường CPU cho RTOS.
-
-## 🧰 Công nghệ và linh kiện
-
-### Phần mềm
-
-| Thành phần | Cấu hình hiện tại |
+| Thành phần | Phiên bản/cấu hình trong repository |
 | --- | --- |
-| Vi điều khiển | ESP32, PlatformIO board `esp32dev` |
-| Framework | Arduino-ESP32 2.0.17 |
-| PlatformIO platform | `espressif32 @ 7.0.1` |
-| MQTT client | `knolleary/PubSubClient @ 2.8` |
-| Điều khiển servo | PWM LEDC tích hợp, 50 Hz, độ phân giải 16-bit |
-| Mô phỏng | Wokwi Simulator for VS Code |
-| Serial Monitor | 115200 baud |
-| Kiểm thử logic | MinGW `g++`, C++11, PowerShell |
+| Board | ESP32, PlatformIO `esp32dev` |
+| Firmware | `espressif32 @ 7.0.1`, Arduino-ESP32 2.0.17 |
+| MQTT firmware | PubSubClient 2.8; TCP 1883 mặc định |
+| Servo | LEDC 50 Hz, 16-bit; API Arduino core 2.x |
+| Serial | 115200 baud |
+| Mobile | Expo ~58.0.23, React 19.3.0, React Native 0.88.1, TypeScript ~6.0.3 |
+| MQTT mobile / lưu cấu hình | MQTT.js ^5.16.1 / AsyncStorage 2.2.0 |
+| Kiểm thử | MinGW g++ C++11; Node test runner; TypeScript |
 
-### Linh kiện và chân tín hiệu
-
-| Linh kiện mô phỏng | Vai trò | GPIO ESP32 |
-| --- | --- | --- |
-| HC-SR04 `hand` | Nhận diện tay phía ngoài | TRIG 5, ECHO 18 |
-| HC-SR04 `trash` | Đo khoảng cách tới mặt rác | TRIG 12, ECHO 14 |
-| Servo `lid` | Đóng/mở nắp | PWM 13 |
-| Biến trở `gas` | Giả lập tín hiệu khí analog | SIG 34 |
-
-Sơ đồ mô phỏng cấp 5 V cho hai HC-SR04 và servo, 3,3 V cho biến trở; các linh kiện dùng chung GND. Xem [diagram.json](diagram.json) để biết toàn bộ kết nối. Chuyển sang mạch thật cần rà soát nguồn và mức điện áp riêng.
-
-## 📂 Cấu trúc dự án
+<a id="structure"></a>
+## 3. Cấu trúc dự án
 
 ```text
 .
-├── include/
-│   ├── Config.h                 # Chân, ngưỡng và chu kỳ
-│   └── Secrets.example.h        # Cấu hình kết nối mẫu, không chứa khóa riêng
-├── src/
-│   ├── main.cpp                 # Khởi tạo, lịch đo và điều phối
-│   ├── LidController.h          # Máy trạng thái nắp
-│   ├── EnvironmentMonitor.h     # Mức rác và hai cảnh báo
-│   ├── UltrasonicSensor.h/.cpp  # Bắt echo bằng ngắt và timeout
-│   └── Telemetry.h/.cpp         # Snapshot, queue, Wi-Fi và MQTT
-├── test/test_logic.cpp          # Kiểm thử logic độc lập phần cứng
-├── scripts/test.ps1             # Biên dịch và chạy host test
-├── docs/TEST_CASES.md            # Kết quả đã chạy và các ca chờ kiểm chứng
-├── diagram.json                 # Sơ đồ mạch Wokwi
-├── wokwi.toml                   # Đường dẫn BIN/ELF cho simulator
-├── platformio.ini               # Board, framework và dependency
-└── KE_HOACH_CODE.md              # Kế hoạch triển khai
+├── include/Config.h               # GPIO, ngưỡng và chu kỳ
+├── include/Secrets.example.h      # Cấu hình kết nối demo
+├── src/main.cpp                   # Lịch cảm biến và điều phối
+├── src/LidController.h            # Máy trạng thái nắp
+├── src/EnvironmentMonitor.h       # Mức rác và cảnh báo
+├── src/UltrasonicSensor.h/.cpp    # ISR echo và timeout
+├── src/Telemetry.h/.cpp           # Snapshot, queue, Wi-Fi và MQTT
+├── test/test_logic.cpp            # 5 nhóm host test
+├── scripts/test.ps1               # Build và chạy host test
+├── mobile/
+│   ├── App.tsx                    # Danh sách, chi tiết, biểu mẫu và demo
+│   ├── src/model.ts               # Decode, trạng thái và kiểm tra cấu hình
+│   ├── src/useMonitor.ts          # MQTT, AsyncStorage, lifecycle
+│   ├── test/model.test.ts         # 5 test model
+│   ├── app.json                   # Cấu hình Expo và icon
+│   ├── package.json               # Dependencies và lệnh chạy
+│   └── README.md                  # Hướng dẫn mobile chi tiết và APK
+├── docs/TEST_CASES.md              # Kết quả cũ và ca runtime W01–W12
+├── docs/MOBILE_PLAN.md             # Phạm vi mobile
+├── diagram.json                   # Mạch Wokwi
+├── wokwi.toml                     # Đường dẫn BIN/ELF
+├── platformio.ini                 # Board, framework, thư viện
+└── KE_HOACH_CODE.md                # Kế hoạch firmware
 ```
 
-## 🚀 Cài đặt và chạy
+<a id="firmware"></a>
+## 4. Chức năng và cấu hình firmware
 
-### 1. Chuẩn bị
+| Chức năng/tham số | Hành vi mặc định |
+| --- | --- |
+| Mở không tiếp xúc | Tay ≤20 cm liên tục 500 ms |
+| Giữ mở / tự đóng | Còn tay thì giữ mở; đóng sau khoảng 3 giây từ lần thấy tay cuối khi xác nhận vùng tay trống |
+| Tay quay lại | Hủy đếm đóng |
+| Cảm biến tay lỗi | Hủy xác nhận mở; nếu đang mở thì giữ mở đến khi có mẫu hợp lệ |
+| Đo rác | Mỗi 2000 ms khi nắp đóng ổn định ít nhất 500 ms |
+| Hai cảm biến siêu âm | Luân phiên, khoảng nghỉ ≥60 ms, timeout echo 30000 µs; mẫu hợp lệ 2–400 cm |
+| Tuổi mẫu | Tay tối đa 250 ms; rác quá 5000 ms được đánh dấu cũ |
+| Cảnh báo đầy | Bật ≥80%, tắt ≤75%; mẫu lỗi giữ cờ cảnh báo trước đó |
+| Khí mô phỏng | ADC 12-bit, đọc mỗi 100 ms; bật >2000, tắt ≤1800 |
+| Servo | Xung đóng 500 µs, mở 1450 µs |
+| Telemetry | State mỗi 2 giây và khi xử lý sự kiện |
 
-Cài VS Code cùng hai extension:
+Máy trạng thái: `CLOSED → CONFIRMING → OPEN → WAITING_TO_CLOSE → CLOSED`. Phép trừ thời gian unsigned xử lý tràn bộ đếm; thời điểm lệnh còn phụ thuộc lịch lấy mẫu, không phải phản hồi vị trí servo.
 
-- [PlatformIO IDE](https://marketplace.visualstudio.com/items?itemName=platformio.platformio-ide).
-- [Wokwi Simulator](https://marketplace.visualstudio.com/items?itemName=Wokwi.wokwi-vscode).
+```text
+mức đầy (%) = clamp(100 × (1 − khoảng cách / 40 cm), 0, 100)
+```
 
-Nếu Wokwi yêu cầu kích hoạt, thực hiện theo hướng dẫn của extension. License là cấu hình riêng của môi trường, không đưa vào repository.
+40 cm → 0%, 20 cm → 50%, khoảng 8 cm → 80%. Đây là ước tính theo chiều cao, chưa phải thể tích thực tế. Mở nắp đánh dấu dữ liệu rác cũ đến phép đo mới sau đóng ổn định.
 
-### 2. Build firmware
+| Linh kiện | GPIO ESP32 |
+| --- | --- |
+| HC-SR04 tay `hand` | TRIG 5, ECHO 18 |
+| HC-SR04 rác `trash` | TRIG 12, ECHO 14 |
+| Servo `lid` | PWM 13 |
+| Biến trở `gas` | SIG 34 |
 
-Mở thư mục dự án trong VS Code. Từ PlatformIO terminal, chạy:
+Mạch mô phỏng cấp 5 V cho HC-SR04/servo, 3,3 V cho biến trở và chung GND. Xem [diagram.json](diagram.json); chuyển sang mạch thật cần kiểm tra điện áp echo/ADC, nguồn servo và chân boot.
+
+<a id="mobile"></a>
+## 5. Chức năng mobile
+
+- Danh sách và chi tiết thùng: mức đầy, thanh phần trăm, ADC khí, cảnh báo đầy/khí, lệnh nắp và thời gian nhận cuối.
+- Thêm/sửa/xóa tên, vị trí, device ID, topic root; kiểm tra trống, trùng ID/topic và wildcard topic.
+- Tìm theo tên/vị trí, lọc thùng có cảnh báo, tổng số thùng và số thùng có cảnh báo.
+- Lưu danh sách và broker trên thiết bị bằng AsyncStorage; cho đổi URL WSS, không lưu tài khoản/mật khẩu broker.
+- Nhận `state`, `events`, `availability`; kiểm tra schema 1, device ID, kiểu dữ liệu và miền giá trị. Cảnh báo dùng cờ firmware, không tự tính lại ngưỡng.
+- Phân biệt mất broker, thiết bị offline, chờ dữ liệu và dữ liệu cũ. Retained state chưa được coi là dữ liệu sống; không có mẫu mới quá 15 giây thì đánh dấu cũ.
+- Khi app xuống nền, kết nối được dọn; trở lại foreground thì kết nối lại. Danh sách thay đổi hoặc đổi broker sẽ tạo lại kết nối và xóa readings hiện tại.
+- Chế độ minh họa tách MQTT, cập nhật mỗi 2 giây; có nút thêm thùng demo cảnh báo. Tắt demo xóa readings giả, nhưng thùng demo vẫn trong danh sách để người dùng xóa.
+
+App chỉ theo dõi; không gửi lệnh điều khiển nắp. Chưa có lịch sử telemetry, tài khoản, push hoặc backend.
+
+<a id="run-firmware"></a>
+## 6. Hướng dẫn chạy firmware và Wokwi
+
+### Bước 1 — Chuẩn bị
+
+Cài VS Code, extension PlatformIO IDE và Wokwi Simulator. Mở thư mục gốc repository. Nếu Wokwi yêu cầu kích hoạt, thực hiện trong extension và giữ license ngoài Git.
+
+### Bước 2 — Cấu hình kết nối
+
+Mặc định dùng `include/Secrets.example.h`: Wi-Fi `Wokwi-GUEST`, mật khẩu rỗng, broker `broker.hivemq.com:1883`.
+
+Để dùng cấu hình riêng:
+
+```powershell
+Copy-Item include/Secrets.example.h include/Secrets.h
+```
+
+Chỉnh `WIFI_SSID`, `WIFI_PASSWORD`, `MQTT_HOST`, `MQTT_PORT`, `MQTT_USER`, `MQTT_PASSWORD`, `DEVICE_ID`, `MQTT_TOPIC_ROOT`. `Secrets.h` được Git bỏ qua. Mỗi thiết bị chạy đồng thời cần ID/topic riêng; sửa ID/topic trong app tương ứng. GPIO/ngưỡng nằm trong `include/Config.h`.
+
+### Bước 3 — Build
+
+Từ PlatformIO terminal tại gốc repository:
 
 ```powershell
 pio run
 ```
 
-Hoặc dùng nút **Build** của PlatformIO. Lần đầu cần kết nối mạng để tải công cụ và thư viện chưa có trên máy.
+Hoặc dùng nút **Build**. Lần đầu cần mạng để tải toolchain/dependencies. Kết quả là `.pio/build/esp32dev/firmware.bin` và `firmware.elf`, khớp `wokwi.toml`.
 
-Khi build thành công, PlatformIO tạo:
+Nếu dùng bộ công cụ local `.pio/core` như môi trường audit Windows này:
 
-```text
-.pio/build/esp32dev/firmware.bin
-.pio/build/esp32dev/firmware.elf
+```powershell
+$env:PLATFORMIO_CORE_DIR = Join-Path (Get-Location) '.pio/core'
+pio run
 ```
 
-Hai đường dẫn này được khai báo trong [wokwi.toml](wokwi.toml). Build lại sau mỗi lần thay đổi code hoặc cấu hình.
+Đây là tùy chọn cho môi trường có toolchain local, không bắt buộc trên máy đã cài PlatformIO bình thường.
 
-### 3. Mở mô phỏng
+### Bước 4 — Chạy và thử
 
-Nhấn **F1** → chọn **Wokwi: Start Simulator**. Theo dõi Serial Monitor:
-
-- `[BOOT]`: firmware khởi động.
-- `[LID ...]`: thay đổi lệnh đóng/mở servo.
-- `[STATE ...]`: trạng thái cảm biến và cảnh báo.
-- `[NET]`: kết nối Wi-Fi/MQTT hoặc thông tin thử lại.
-
-### 4. Thử nhanh
+Nhấn **F1 → Wokwi: Start Simulator**. Xem Serial: `[BOOT]`, `[LID ...]`, `[STATE ...]`, `[NET]`.
 
 | Thao tác | Kết quả cần quan sát |
 | --- | --- |
-| Chỉnh `hand` từ 50 xuống 10 cm, giữ trên 500 ms | Nắp chuyển sang mở |
-| Giữ `hand` ở 10 cm lâu hơn 3 giây | Nắp tiếp tục mở |
-| Chỉnh `hand` về 50 cm | Khoảng 3 giây sau gửi lệnh đóng |
-| Khi nắp đóng, chỉnh `trash` về 7 cm | Sau lượt đo, bật cảnh báo đầy |
-| Giảm mức đầy bằng cách chỉnh `trash` về 12 cm | Xóa cảnh báo đầy |
-| Tăng biến trở đến khi Serial có `gas > 2000` | Bật `gas_high`, kể cả rác chưa đầy |
-| Giảm biến trở đến `gas <= 1800` | Xóa cảnh báo khí |
+| `hand`: 50 → 10 cm, giữ >500 ms | Nắp mở |
+| Giữ tay 10 cm >3 giây | Nắp vẫn mở |
+| `hand`: về 50 cm | Khoảng 3 giây sau gửi lệnh đóng |
+| Khi nắp đóng, `trash`: về 7 cm | Sau lượt đo bật cảnh báo đầy |
+| `trash`: về 12 cm | Xóa cảnh báo đầy |
+| Tăng biến trở đến ADC >2000 | Bật gas_high độc lập với đầy |
+| Giảm ADC ≤1800 | Xóa gas_high |
 
-Dùng 7 cm để demo báo đầy thay vì đặt đúng 8 cm, tránh sai số lượng tử ngay tại ngưỡng.
+Dùng 7 cm để demo báo đầy, tránh sai số lượng tử ở đúng ngưỡng 8 cm. Build lại và khởi động lại mô phỏng sau mỗi lần đổi code/cấu hình.
 
-## 🌐 Theo dõi MQTT trên trình duyệt
+<a id="run-mobile"></a>
+## 7. Hướng dẫn chạy ứng dụng mobile
 
-### Kết nối
+Cài Node.js tương thích Expo SDK trong `mobile/package.json`. Từ gốc repository:
 
-Mở trực tiếp [HiveMQ MQTT WebSocket Client](https://www.hivemq.com/demos/websocket-client/). Luồng demo với broker công cộng không yêu cầu tạo tài khoản.
+```powershell
+cd mobile
+npm ci
+npm start
+```
 
-| Trường | Giá trị |
+Điện thoại và máy tính cùng Wi-Fi, dùng Expo Go tương thích SDK rồi quét QR trong terminal. Nếu Expo Go chưa hỗ trợ SDK này, cần development build tương thích.
+
+| Môi trường | Cách chạy từ mobile/ |
 | --- | --- |
-| Host | `broker.hivemq.com` |
-| Port | `8884` |
-| SSL | Bật |
-| ClientID | ID riêng cho trình duyệt, khác `DEVICE_ID` của ESP32 |
-| Username / Password | Để trống với broker demo mặc định |
-| Clean Session | Bật |
+| Android emulator | Cài Android Studio, tạo/mở máy ảo trong Device Manager, chạy `npm run android` |
+| Android native qua USB/emulator | Chuẩn bị Android SDK/JDK và thiết bị, chạy `npx expo run:android --device` |
+| iOS simulator | Trên macOS có Xcode: `npm run ios` |
+| Web tùy chọn | `npm run web`, mở URL local CLI trả về |
+| APK cài độc lập | Xem [hướng dẫn EAS APK](mobile/README.md#build-apk-cài-độc-lập); chưa có APK hoặc eas.json trong tree |
 
-Bấm **Connect**, sau đó **Add New Topic Subscription**. Lấy giá trị `MQTT_TOPIC_ROOT` trong cấu hình đang dùng và thêm `/#` để nhận toàn bộ topic của thiết bị.
+Nhấn `Ctrl+C` để dừng; xóa cache bằng `npm start -- --clear`. Nếu PowerShell chặn `npm.ps1`, dùng `npm.cmd`.
 
-Ví dụ với topic root minh họa `demo/trash/device-a`, đăng ký:
+**Demo không cần ESP32:** bật “Chế độ minh họa”, thêm thùng demo có cảnh báo, thử tìm kiếm/lọc và mở chi tiết. Tắt demo để nhận MQTT thật.
 
-```text
-demo/trash/device-a/#
-```
+**Chạy cùng firmware:** giữ app ở foreground, tắt demo, kiểm tra broker và sửa device ID/topic root khớp firmware; chạy Wokwi, chờ bản tin mới rồi đối chiếu Serial với app. Topic root không thêm `/#`.
 
-Ví dụ này chỉ có tác dụng khi firmware cũng được cấu hình đúng topic đó. Nếu chưa tạo cấu hình riêng, lấy topic root mặc định từ [Secrets.example.h](include/Secrets.example.h).
+Hướng dẫn thiết lập Android Studio, USB, APK, iOS và khắc phục chi tiết nằm trong [mobile/README.md](mobile/README.md).
 
-Nếu ứng dụng MQTT khác yêu cầu URL đầy đủ, dùng:
+<a id="mqtt"></a>
+## 8. Kết nối MQTT và dữ liệu
 
-```text
-wss://broker.hivemq.com:8884/mqtt
-```
+| Cấu hình mặc định | Giá trị |
+| --- | --- |
+| ESP32 TCP | `broker.hivemq.com:1883`, không TLS |
+| App / client WebSocket | `wss://broker.hivemq.com:8884/mqtt` |
+| Device ID | `nhom10-trash-7c91a2` |
+| Topic root | `nhom10/trash/nhom10-trash-7c91a2` |
 
-ESP32 dùng MQTT TCP trên cổng **1883**; trình duyệt dùng WebSocket bảo mật trên cổng **8884**. Không đổi cổng firmware sang cổng WebSocket.
-
-### Topic và tần suất
+Để xem bằng trình duyệt, mở [HiveMQ WebSocket Client](https://www.hivemq.com/demos/websocket-client/), nhập host `broker.hivemq.com`, port `8884`, bật SSL, dùng ClientID riêng, để trống user/password với broker demo rồi Connect. Subscribe `<topic-root>/#`. Không đổi firmware sang port WebSocket.
 
 | Topic | Nội dung | Retained |
 | --- | --- | --- |
-| `<topic-root>/state` | Snapshot mới nhất, định kỳ 2 giây và khi xử lý sự kiện | Có |
-| `<topic-root>/events` | Snapshot khi lệnh nắp, cảnh báo hoặc tính hợp lệ dữ liệu thay đổi | Không |
-| `<topic-root>/availability` | `online` khi kết nối; `offline` qua Last Will khi mất kết nối | Có |
+| `<root>/state` | Snapshot mới nhất định kỳ 2 giây và sau xử lý sự kiện | Có |
+| `<root>/events` | Snapshot khi lệnh nắp, cảnh báo hoặc tính hợp lệ/stale thay đổi | Không |
+| `<root>/availability` | `online` khi kết nối, `offline` qua Last Will khi mất kết nối | Có |
 
-State/events hiện dùng **QoS 0**, chưa có xác nhận giao hàng cho từng bản tin.
-
-### Dữ liệu trạng thái
-
-Ví dụ minh họa một bản tin, không phải log từ thiết bị đã chạy:
+State/events dùng QoS 0. Ví dụ minh họa schema, không phải log runtime:
 
 ```json
 {
   "schema": 1,
-  "device_id": "device-a",
+  "device_id": "nhom10-trash-7c91a2",
   "sequence": 3,
   "uptime_ms": 20000,
   "lid_command": "closed",
@@ -226,139 +271,88 @@ Ví dụ minh họa một bản tin, không phải log từ thiết bị đã ch
 }
 ```
 
-| Trường | Ý nghĩa |
-| --- | --- |
-| `schema`, `device_id` | Phiên bản cấu trúc dữ liệu và ID thiết bị |
-| `sequence` | Bộ đếm các lần thay đổi trạng thái được ghi nhận |
-| `uptime_ms` | Thời gian firmware hoạt động; bắt đầu lại khi khởi động lại |
-| `lid_command` | Lệnh `open`/`closed` gửi đến servo, không phải phản hồi vị trí cơ khí |
-| `hand_cm`, `hand_valid`, `hand_age_ms` | Khoảng cách tay, tính hợp lệ và tuổi mẫu |
-| `fill_percent`, `trash_valid`, `trash_stale`, `trash_age_ms` | Mức đầy, tính hợp lệ, cờ dữ liệu cũ và tuổi mẫu rác |
-| `gas_adc`, `gas_valid` | Giá trị ADC 12-bit và trạng thái đã có mẫu |
-| `full`, `gas_high` | Hai cờ cảnh báo độc lập, có cơ chế giữ trạng thái giữa hai ngưỡng |
+`sequence` đếm thay đổi được ghi nhận; `uptime_ms` là thời gian từ khi firmware khởi động. `lid_command` là lệnh gửi servo, chưa phải phản hồi vị trí cơ khí. `null` nghĩa là chưa có mẫu/mẫu lỗi, không phải 0. `trash_stale=true` nghĩa là mức đầy có thể là mẫu cũ. Cờ báo đầy giữ nguyên khi cảm biến rác lỗi, nên phải đọc cùng trạng thái dữ liệu.
 
-`null` biểu thị chưa có dữ liệu hoặc mẫu lỗi, không phải giá trị 0. Khi `trash_stale=true`, mức đầy có thể là mẫu cũ; không coi đó là phép đo hiện tại. Lỗi cảm biến rác giữ cờ cảnh báo trước đó, nên cần đọc cờ cảnh báo cùng trạng thái dữ liệu.
+Retained state có thể thuộc phiên trước. Theo dõi availability, uptime và bản tin mới; Last Will có độ trễ phát hiện offline. Mất broker không đủ để kết luận riêng thiết bị đã offline.
 
-Bản tin retained có thể đến từ phiên chạy trước. Xem `availability` và sự thay đổi `uptime_ms` qua các bản tin mới; broker cần thời gian để phát hiện mất kết nối và phát Last Will.
+Wi-Fi retry mỗi 10 giây, MQTT backoff tối đa 30 giây. Queue snapshot giữ giá trị mới nhất; queue sự kiện tối đa 12 phần tử RAM, có thể bỏ sự kiện cũ và xóa trước lượt kết nối MQTT mới. Reconnect ưu tiên trạng thái hiện tại, không khôi phục toàn bộ lịch sử.
 
-## ⚙️ Thuật toán và cấu hình
+<a id="tests"></a>
+## 9. Kiểm thử và kết quả xác minh
 
-### Điều khiển nắp
+### Lệnh kiểm tra
 
-```text
-CLOSED → CONFIRMING → OPEN → WAITING_TO_CLOSE → CLOSED
-```
-
-Tay rời đi trước khi đủ 500 ms thì hủy xác nhận. Tay quay lại khi đang đếm đóng thì giữ mở. Khoảng cách tay không hợp lệ sẽ hủy xác nhận mở; nếu nắp đã mở thì giữ mở cho đến khi có dữ liệu hợp lệ.
-
-Các mốc dùng phép trừ thời gian unsigned để xử lý bộ đếm tràn. Thời điểm phản hồi còn phụ thuộc chu kỳ lấy mẫu, không đồng nghĩa servo hoàn thành chuyển động đúng ngay tại mốc đó.
-
-### Mức rác và khí
-
-Với chiều cao thùng minh họa **40 cm**, mức đầy được tính theo khoảng cách từ cảm biến đến mặt rác:
-
-```text
-mức đầy (%) = giới hạn[0, 100](100 × (1 − khoảng cách / chiều cao thùng))
-```
-
-40 cm tương ứng 0%, 20 cm tương ứng 50%, 8 cm xấp xỉ 80%. Đây là ước tính theo chiều cao, chưa đo chính xác thể tích rác có bề mặt bất quy tắc.
-
-| Thông số | Mặc định |
-| --- | --- |
-| Khoảng cách nhận tay | ≤20 cm |
-| Thời gian xác nhận mở | 500 ms |
-| Thời gian tự đóng | 3000 ms sau lần thấy tay cuối, khi vùng tay đã được xác nhận trống |
-| Khoảng nghỉ giữa hai lần phát siêu âm | Ít nhất 60 ms |
-| Timeout echo | 30000 µs |
-| Chu kỳ đo rác | 2000 ms khi đủ điều kiện |
-| Chờ ổn định sau lệnh đóng | 500 ms |
-| Chu kỳ đọc khí | 100 ms |
-| Ngưỡng đầy bật / tắt | ≥80% / ≤75% |
-| Ngưỡng khí bật / tắt | >2000 / ≤1800 |
-
-Hai ngưỡng bật/tắt khác nhau giúp cảnh báo không dao động liên tục khi số đo ở sát ranh giới. Mở nắp làm dữ liệu mức rác chuyển sang cũ; chỉ cập nhật lại sau khi đóng ổn định và có lượt đo mới.
-
-### Thay đổi cấu hình
-
-- Chỉnh chân, chu kỳ và ngưỡng trong [include/Config.h](include/Config.h).
-- Sao chép `include/Secrets.example.h` thành `include/Secrets.h` để ghi cấu hình kết nối riêng. File riêng đã được loại khỏi Git bằng quy tắc hiện có.
-- Chỉnh `WIFI_SSID`, `WIFI_PASSWORD`, `MQTT_HOST`, `MQTT_PORT` và thông tin xác thực phù hợp broker.
-- Dùng `DEVICE_ID` và `MQTT_TOPIC_ROOT` riêng cho mỗi thiết bị chạy đồng thời; cập nhật subscription bên nhận tương ứng.
-- Build lại rồi khởi động lại mô phỏng.
-
-Firmware hiện dùng WiFiClient TCP thông thường. Đổi sang broker bắt buộc TLS cần bổ sung transport TLS và xác minh chứng thư; chỉ đổi số cổng sang 8883 chưa đủ.
-
-### Mất mạng và dữ liệu offline
-
-Wi-Fi được thử lại theo chu kỳ 10 giây; MQTT dùng thời gian chờ tăng dần đến tối đa 30 giây. Điều khiển nắp tiếp tục trong vòng lặp riêng.
-
-Snapshot dùng queue một phần tử để giữ trạng thái mới nhất. Queue sự kiện có tối đa 12 phần tử trong RAM, có thể bỏ sự kiện cũ và được xóa trước lượt kết nối MQTT mới. Sau reconnect, firmware ưu tiên gửi trạng thái hiện tại; chưa có lưu trữ lịch sử bền.
-
-## 🧪 Kiểm thử
-
-### Chạy host test
-
-Cần MinGW `g++` trên PATH. Tại thư mục dự án:
+Cần MinGW `g++` trên PATH. Từ gốc repository:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test.ps1
 ```
 
-Script biên dịch với C++11 và `-Wall -Wextra -Werror`, sau đó chạy các nhóm kịch bản:
+Script biên dịch C++11 với `-Wall -Wextra -Werror`. Mobile:
 
-1. Thời gian xác nhận mở và trường hợp quơ tay nhanh.
-2. Tự đóng và tay quay lại trước hạn.
-3. Lỗi cảm biến trong lúc xác nhận hoặc đang mở.
-4. Bộ đếm thời gian tràn `uint32_t`.
-5. Quy đổi mức đầy, ngưỡng bật/tắt và hai cảnh báo độc lập.
+```powershell
+cd mobile
+npm run typecheck
+npm test
+```
 
-### Mức độ đã xác minh
+Để kiểm tra đóng gói web riêng: `npx expo export --platform web` tại `mobile/`. Export bundle không phải APK/IPA.
 
-| Hạng mục | Kết quả hiện có |
+### Kết quả chạy lại ngày 15/11/2026
+
+| Kiểm tra | Kết quả |
 | --- | --- |
-| Biên dịch firmware ESP32 | Thành công |
-| Năm nhóm host test | Pass |
-| Cấu trúc JSON/TOML và đường dẫn firmware | Đã kiểm tra |
-| Servo và ngắt echo khi chạy trong Wokwi | Chờ kiểm chứng tương tác |
-| MQTT từ ESP32 mô phỏng qua gateway tới trình duyệt | Chờ kiểm chứng end-to-end |
-| Mất mạng và phục hồi trên mô phỏng | Chờ kiểm chứng tương tác |
+| PlatformIO ESP32 build | SUCCESS; RAM tĩnh 45.704/327.680 byte (13,9%), flash 764.737/1.310.720 byte (58,3%) |
+| Host logic C++ | PASS, 5 nhóm: timing, tay quay lại, cảm biến lỗi, tràn thời gian, cảnh báo độc lập |
+| Mobile TypeScript | PASS |
+| Mobile model | PASS, 5/5: schema/cảnh báo, dữ liệu lỗi, mẫu null, trạng thái retained/cũ/offline, cấu hình trùng/wildcard |
+| Mobile lint | Chưa có script/config lint; chưa chạy |
+| Wokwi W01–W12, điện thoại/emulator, MQTT end-to-end | Chưa chạy trong audit |
 
-Xem [docs/TEST_CASES.md](docs/TEST_CASES.md) để thực hiện và ghi nhận các ca runtime. Build và host test chưa chứng minh toàn bộ mạch mô phỏng hoạt động thành công.
+Node có cảnh báo `MODULE_TYPELESS_PACKAGE_JSON` khi chạy model test nhưng test vẫn pass. Test model chưa bao phủ hook MQTT, AsyncStorage, lifecycle hoặc giao diện. RAM build chưa bao gồm tất cả heap/stack runtime.
 
-## 🛠️ Xử lý sự cố
+[docs/TEST_CASES.md](docs/TEST_CASES.md) giữ báo cáo firmware ngày 05/11/2026 và danh sách ca runtime. [mobile/README.md](mobile/README.md) giữ báo cáo ngày 11/11/2026 về export web/Android/iOS và dependency compatibility; các bước đó chưa được chạy lại trong audit này.
+
+<a id="remaining"></a>
+## 10. Giới hạn và việc cần làm tiếp
+
+Ưu tiên theo thứ tự:
+
+1. Chạy W01–W12, lưu ảnh/log; xác minh servo, ISR, timeout, hai core, mất mạng/reconnect và Last Will. Tiếp theo chạy ESP32 → broker → app trên điện thoại/emulator.
+2. Kiểm tra thêm/sửa/xóa, lưu và mở lại app, foreground/background, JSON lỗi, ID/topic sai, mẫu invalid/stale. Cấu hình đọc từ AsyncStorage hiện chỉ kiểm tra kiểu mảng/chuỗi và tiền tố WSS, chưa tái dùng toàn bộ kiểm tra trùng ID/topic và URL của biểu mẫu.
+3. Rà soát cách hiển thị cảnh báo cũ: app vẫn hiển thị/đếm cờ cảnh báo cuối khi thiết bị offline hoặc dữ liệu cũ. Luôn đọc kèm trạng thái/thời gian, không coi là cảnh báo mới được xác nhận.
+4. Bổ sung lint và kiểm thử kết nối/lưu trữ/UI khi phát triển tiếp. Chưa có cấu hình EAS/signing hoặc artifact APK/IPA.
+5. Nếu cần triển khai riêng: thiết kế xác thực, phân quyền broker và TLS firmware, backend/lịch sử bền, push. App hiện không có form tài khoản/mật khẩu broker; không có tài khoản hay đồng bộ giữa thiết bị.
+6. Kiểm tra lại dependency advisory trước phát hành. Báo cáo mobile ngày 11/11/2026 ghi 5 cảnh báo moderate; audit này chưa chạy lại kiểm tra advisory trực tuyến nên không kết luận số lượng hiện tại.
+
+Public broker dùng chung chỉ phục vụ demo, topic không phải quyền truy cập riêng. Không đưa mật khẩu thật, token, license, keystore hoặc dữ liệu cá nhân vào README/Git hay topic công cộng. Chỉ đổi cổng firmware sang 8883 chưa đủ để có TLS; cần transport và xác minh chứng thư.
+
+Biến trở không phải MQ-135 thực tế, không quy đổi ppm hoặc kết luận độc hại. Chưa có phản hồi vị trí servo, cảm biến chống kẹt, hiệu chuẩn phần cứng hoặc AI chạy trên ESP32. Mạch mô phỏng chưa phải hướng dẫn đấu nối thiết bị thật. Public Gateway của Wokwi không truy cập LAN.
+
+<a id="troubleshooting"></a>
+## 11. Xử lý sự cố
 
 | Hiện tượng | Cách kiểm tra |
 | --- | --- |
-| Terminal không nhận `pio` | Mở PlatformIO terminal hoặc dùng nút Build |
-| Wokwi không tìm thấy firmware | Build trước; kiểm tra environment `esp32dev` và đường dẫn trong `wokwi.toml` |
-| Wokwi yêu cầu license | Hoàn tất kích hoạt trong extension, giữ license ở cấu hình riêng |
-| Không nhận MQTT trên trình duyệt | Kiểm tra log `[NET]`, kết nối WebSocket SSL/8884 và subscription khớp topic root |
-| Hai phiên ESP32 làm rớt kết nối nhau | Đặt `DEVICE_ID` khác nhau; ClientID trình duyệt cũng phải riêng |
-| Mức đầy không cập nhật khi mở nắp | Đây là hành vi dự kiến; đóng nắp, chờ ổn định và lượt đo mới |
-| Mức đầy là `null` | Kiểm tra dây echo, mẫu hợp lệ và trạng thái cảm biến; không coi là thùng rỗng |
-| Chưa thấy `offline` ngay khi tắt mô phỏng | Chờ broker phát hiện mất kết nối; kiểm tra lại topic availability |
-| Kết nối broker LAN không thành công | Public Gateway của Wokwi không truy cập mạng LAN; cần đường mạng/gateway phù hợp |
-| Nâng Arduino core rồi lỗi LEDC | Dự án đang dùng API core 2.x; giữ phiên bản đã cố định hoặc cập nhật driver khi nâng core |
+| Không nhận pio | Mở PlatformIO terminal hoặc dùng nút Build |
+| Không tìm thấy firmware Wokwi | Build trước, kiểm tra env esp32dev và wokwi.toml |
+| Wokwi yêu cầu license | Kích hoạt trong extension, giữ license riêng |
+| App không mở bằng Expo Go | Kiểm tra SDK tương thích; dùng development build khi cần |
+| Android không tìm thấy thiết bị | Khởi động emulator, kiểm tra Android SDK/PATH hoặc USB debugging và `adb devices` |
+| Không nhận MQTT | Tắt demo, kiểm tra log NET, broker, device ID, topic root; app dùng WSS 8884, firmware TCP 1883 |
+| Hai ESP32 làm rớt kết nối nhau | Dùng DEVICE_ID riêng, ClientID app/trình duyệt cũng phải khác |
+| Mức đầy không đổi khi mở nắp | Hành vi dự kiến; chờ đóng ổn định và lượt đo mới |
+| Mức đầy null | Kiểm tra echo và valid; không coi là thùng rỗng |
+| Chưa thấy offline ngay | Chờ broker phát hiện mất kết nối và phát Last Will |
+| Broker LAN không kết nối từ Wokwi | Public Gateway không truy cập LAN; cần gateway/đường mạng phù hợp |
+| Nâng Arduino core bị lỗi LEDC | Giữ core 2.x đã cố định hoặc cập nhật driver theo API mới |
 
-## 🔐 Bảo mật và giới hạn
+<a id="docs"></a>
+## 12. Tài liệu liên quan
 
-README và cấu hình mẫu chỉ dùng giá trị demo công khai. Giữ API key, mật khẩu Wi-Fi thật, mật khẩu broker, license và thông tin cá nhân ngoài tài liệu công khai. Không gửi các dữ liệu này qua topic của broker công cộng.
-
-Broker mặc định phục vụ học và thử MQTT; chưa có độ tin cậy hay phân quyền riêng cho triển khai thực tế. Luồng demo đi qua Internet, chưa phải hệ thống chỉ vận hành trong mạng nội bộ. [Wokwi Public Gateway](https://docs.wokwi.com/guides/esp32-wifi) không truy cập được LAN.
-
-Phạm vi bản hiện tại:
-
-- Theo dõi bản tin trên trang đang mở; chưa có dashboard đồ họa hoặc thông báo đẩy khi đóng trang.
-- Biến trở chỉ giả lập ADC; không quy đổi ppm hoặc kết luận về mức độ độc hại của khí.
-- Lệnh servo chưa có phản hồi vị trí và chưa thay thế cơ chế chống kẹt vật lý.
-- Sơ đồ mô phỏng chưa phải hướng dẫn đấu nối phần cứng thật; cần kiểm tra điện áp echo/ADC, nguồn servo, chân boot và hiệu chuẩn.
-- Chưa có mô hình AI chạy trên ESP32. Điều khiển dùng máy trạng thái, lịch đo và hysteresis.
-
-## 📚 Tài liệu tham khảo
-
-- [Wokwi — PlatformIO Projects](https://docs.wokwi.com/vscode/platformio).
-- [Wokwi — ESP32 Wi-Fi và Gateway](https://docs.wokwi.com/guides/esp32-wifi).
-- [HiveMQ — Public MQTT Broker](https://www.hivemq.com/mqtt/public-mqtt-broker/).
-- [HiveMQ — MQTT WebSocket Client](https://www.hivemq.com/demos/websocket-client/).
-- [HiveMQ — Cấu hình cổng broker](https://broker.hivemq.com/).
-- [PubSubClient — Mã nguồn và API](https://github.com/knolleary/pubsubclient).
+- [Hướng dẫn mobile và APK](mobile/README.md).
+- [Phạm vi mobile](docs/MOBILE_PLAN.md), [kế hoạch firmware](KE_HOACH_CODE.md).
+- [Ca kiểm thử runtime Wokwi](docs/TEST_CASES.md).
+- [Wokwi PlatformIO](https://docs.wokwi.com/vscode/platformio), [Wi-Fi/Gateway](https://docs.wokwi.com/guides/esp32-wifi).
+- [HiveMQ broker demo](https://www.hivemq.com/mqtt/public-mqtt-broker/), [WebSocket client](https://www.hivemq.com/demos/websocket-client/).
+- [PubSubClient](https://github.com/knolleary/pubsubclient), [MQTT.js](https://github.com/mqttjs/MQTT.js).
