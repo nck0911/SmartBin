@@ -7,7 +7,7 @@ React Native + Expo + TypeScript trong `mobile/`. Không gửi lệnh điều kh
 1. Danh sách thùng, tìm kiếm và lọc cảnh báo.
 2. Thêm/sửa/xóa tên, vị trí, device ID và MQTT topic root; lưu trên thiết bị.
 3. MQTT qua WebSocket bảo mật; nhận state/events/availability theo schema 1.
-4. Chi tiết mức đầy, khí giả lập, cập nhật cuối và tình trạng cảm biến.
+4. Chi tiết mức đầy, mức mùi Bình thường/Cao, cảnh báo Có mùi hôi, cập nhật cuối và tình trạng cảm biến. Nguồn tín hiệu mùi trong demo là biến trở, giải thích trong README.
 5. Dùng cờ full/gas_high của firmware, không tự suy ra ngưỡng cảnh báo.
 6. Không xem retained state là dữ liệu sống. Chờ bản tin mới và đánh dấu cũ khi không có cập nhật trong 15 giây.
 7. Chế độ demo tách khỏi dữ liệu MQTT, có nhãn rõ ràng.

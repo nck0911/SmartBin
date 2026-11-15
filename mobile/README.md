@@ -139,7 +139,7 @@ Nếu PowerShell chặn script `npm.ps1`, dùng `npm.cmd` thay cho `npm` (ví d�
 - Nếu firmware dùng `Secrets.h`, sửa ID và topic trong app tương ứng.
 - Thêm thùng: tên, vị trí, device ID và topic root (không thêm `/#`).
 - App subscribe `state`, `events`, `availability` và kết quả thiết lập chiều cao; chỉ gửi yêu cầu thiết lập, không gửi lệnh đóng/mở nắp.
-- Cờ `full` và `gas_high` lấy từ firmware; khí hiện là ADC giả lập.
+- Cờ `full` và `gas_high` lấy từ firmware. UI gọi `gas_high` là cảnh báo mùi hôi, hiển thị “Mức mùi: Bình thường / Cao”. Trong demo, nguồn tín hiệu là biến trở; không quy đổi ADC thành ppm hoặc phần trăm mùi. Xem [giải thích mô phỏng và cảm biến thực tế](../README.md#odor-simulation).
 - Bản tin retained được đánh dấu dữ liệu cũ cho đến khi có bản tin mới. Không có bản tin mới trong 15 giây cũng được đánh dấu cũ. Khi broker mất kết nối không thể kết luận riêng thiết bị offline.
 - Danh sách và URL broker lưu trên máy bằng AsyncStorage; không lưu tài khoản/mật khẩu.
 - Cảnh báo hiển thị khi app đang mở; chưa có push, backend hoặc lịch sử.
@@ -160,7 +160,7 @@ Trên ESP32 thật, thiết lập lưu trong NVS qua lần khởi động lại.
 
 ### Các thao tác cần kiểm tra
 
-Bật **Chế độ minh họa** để xem dữ liệu giả lập. Thêm thùng demo thứ hai để thấy đồng thời cảnh báo đầy và khí. Tắt demo để quay về MQTT; dữ liệu giả lập được xóa khỏi bộ nhớ đọc. Các thùng demo vẫn trong danh sách, có thể xóa bằng màn hình chi tiết.
+Bật **Chế độ minh họa** để xem dữ liệu giả lập. Thêm thùng demo thứ hai để thấy đồng thời cảnh báo đầy và mùi hôi. Tắt demo để quay về MQTT; dữ liệu giả lập được xóa khỏi bộ nhớ đọc. Các thùng demo vẫn trong danh sách, có thể xóa bằng màn hình chi tiết.
 
 1. Thêm/sửa/xóa thùng và mở lại app để kiểm tra lưu trữ.
 2. Tìm kiếm tên/vị trí, bật bộ lọc cảnh báo.

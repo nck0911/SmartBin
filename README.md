@@ -2,7 +2,7 @@
 
 **Thùng rác thông minh với ESP32 và ứng dụng theo dõi trên điện thoại.**
 
-Smart Trash Can kết hợp điều khiển nắp không tiếp xúc, theo dõi mức đầy và cảnh báo khí mô phỏng trong một hệ thống IoT. Thiết bị gửi dữ liệu qua MQTT để người dùng quan sát trạng thái và quản lý danh sách thùng rác bằng ứng dụng React Native.
+Smart Trash Can kết hợp điều khiển nắp không tiếp xúc, theo dõi mức đầy và cảnh báo mùi hôi trong một hệ thống IoT. Thiết bị gửi dữ liệu qua MQTT để người dùng quan sát trạng thái và quản lý danh sách thùng rác bằng ứng dụng React Native.
 
 Dự án sử dụng Wokwi để mô phỏng thiết bị, giúp tìm hiểu cách cảm biến, bộ điều khiển và ứng dụng phối hợp trong quy trình theo dõi và thu gom rác.
 
@@ -13,6 +13,7 @@ Dự án sử dụng Wokwi để mô phỏng thiết bị, giúp tìm hiểu cá
 - [Công nghệ sử dụng](#technology)
 - [Kiến trúc hệ thống](#architecture)
 - [Thành phần mô phỏng](#components)
+- [Mô phỏng mùi và cảm biến thực tế](#odor-simulation)
 - [Cấu trúc dự án](#structure)
 - [Hướng dẫn chạy](#getting-started)
 - [Trải nghiệm demo](#demo)
@@ -24,9 +25,9 @@ Dự án sử dụng Wokwi để mô phỏng thiết bị, giúp tìm hiểu cá
 
 Dự án hướng đến thao tác bỏ rác thuận tiện và theo dõi tình trạng thùng từ xa. Người dùng đưa tay đến gần để mở nắp; thiết bị giữ nắp mở khi tay còn trong vùng nhận diện và tự đóng khi tay rời đi. Cảm biến bên trong đo khoảng cách đến mặt rác để ước tính mức đầy.
 
-Ứng dụng hiển thị nhiều thùng trong cùng danh sách, hỗ trợ tìm kiếm theo tên hoặc vị trí và lọc các thùng có cảnh báo. Người dùng có thể xem mức đầy, chỉ số khí mô phỏng và tình trạng cập nhật của từng thùng để chủ động kiểm tra, thu gom.
+Ứng dụng hiển thị nhiều thùng trong cùng danh sách, hỗ trợ tìm kiếm theo tên hoặc vị trí và lọc các thùng có cảnh báo. Người dùng có thể xem mức đầy, tình trạng mùi và tình trạng cập nhật của từng thùng để chủ động kiểm tra, thu gom.
 
-Phạm vi hiện tại là mô phỏng và demo. Chỉ số khí được tạo bằng biến trở; mức đầy là ước tính theo chiều cao thùng. Việc vận hành trên phần cứng thật và toàn bộ luồng thiết bị đến ứng dụng cần được kiểm chứng thêm.
+Phạm vi hiện tại là mô phỏng và demo. Tín hiệu mùi được giả lập bằng biến trở; mức đầy là ước tính theo chiều cao thùng. Việc vận hành trên phần cứng thật và toàn bộ luồng thiết bị đến ứng dụng cần được kiểm chứng thêm.
 
 <a id="features"></a>
 ## ✨ Chức năng
@@ -39,7 +40,7 @@ Phạm vi hiện tại là mô phỏng và demo. Chỉ số khí được tạo 
 | ⏱️ Tự động đóng nắp | Giữ mở khi còn tay; đóng sau khoảng 3 giây khi tay rời vùng nhận diện |
 | 📊 Theo dõi mức đầy | Ước tính phần trăm đầy từ khoảng cách tới mặt rác khi nắp đóng ổn định |
 | 🔔 Cảnh báo đầy | Bật khi mức đầy đạt 80%, xóa khi giảm xuống 75% hoặc thấp hơn |
-| 🌫️ Cảnh báo khí mô phỏng | Theo dõi tín hiệu analog và cảnh báo độc lập với mức đầy |
+| 🌫️ Cảnh báo mùi hôi | Hiển thị tình trạng mùi và nhắc kiểm tra, vệ sinh thùng độc lập với cảnh báo đầy |
 | 📡 Truyền dữ liệu MQTT | Gửi trạng thái, sự kiện và tình trạng kết nối |
 | 🔄 Phục hồi kết nối | Tự thử kết nối lại; điều khiển nắp tiếp tục hoạt động khi mất mạng |
 | 🛠️ Xử lý dữ liệu cảm biến | Phân biệt mẫu không hợp lệ và mẫu cũ; giữ nắp mở khi cảm biến tay lỗi lúc đang mở |
@@ -48,7 +49,7 @@ Phạm vi hiện tại là mô phỏng và demo. Chỉ số khí được tạo 
 
 - **Quản lý danh sách:** thêm, sửa, xóa thông tin thùng và vị trí.
 - **Tìm kiếm và lọc:** tìm theo tên/vị trí, lọc thùng có cảnh báo.
-- **Theo dõi trực quan:** thanh mức đầy, chỉ số khí mô phỏng, cảnh báo và tổng quan danh sách.
+- **Theo dõi trực quan:** thanh mức đầy, tình trạng mùi, cảnh báo và tổng quan danh sách.
 - **Xem chi tiết:** thông tin thiết bị, lệnh nắp và thời gian nhận dữ liệu gần nhất.
 - **Nhận biết trạng thái:** phân biệt mất kết nối, thiết bị offline, chờ dữ liệu và dữ liệu cũ.
 - **Lưu danh sách:** giữ thông tin thùng trên thiết bị để sử dụng khi mở lại ứng dụng.
@@ -79,7 +80,7 @@ Phạm vi hiện tại là mô phỏng và demo. Chỉ số khí được tạo 
 flowchart LR
     H[Cảm biến nhận diện tay] --> E[ESP32]
     T[Cảm biến mức rác] --> E
-    G[Tín hiệu khí mô phỏng] --> E
+    G[Tín hiệu mùi từ biến trở] --> E
     E --> S[Servo nắp thùng]
     E --> W[Wokwi Gateway]
     W --> B[MQTT Broker]
@@ -100,6 +101,32 @@ Firmware tách điều khiển cục bộ và xử lý mạng thành các tác v
 | Biến trở | 1 | Giả lập tín hiệu analog của cảm biến khí |
 
 Sơ đồ mô phỏng nằm trong [diagram.json](diagram.json).
+
+<a id="odor-simulation"></a>
+## 🌫️ Mô phỏng mùi và cảm biến thực tế
+
+### Vì sao demo dùng biến trở?
+
+Biến trở tạo điện áp đầu vào thay đổi để ESP32 đọc bằng ADC. Xoay núm tăng tín hiệu tương ứng tình huống mùi tăng; giảm tín hiệu tương ứng tình huống mùi giảm. Cách này cho phép chủ động thử trạng thái bình thường, cảnh báo và phục hồi mà không cần tạo khí hoặc dùng rác thật.
+
+Đây là mô phỏng **tín hiệu đầu ra của khối cảm biến**, phù hợp để kiểm tra chuỗi đọc tín hiệu → xử lý ngưỡng → MQTT → hiển thị cảnh báo trên app.
+
+| Mô phỏng bằng biến trở | Cảm biến mùi kiểu bán dẫn ngoài thực tế |
+| --- | --- |
+| Người dùng xoay núm làm thay đổi điện áp tại chân tín hiệu | Khí tác động làm thay đổi điện trở của phần tử nhạy khí; mạch đo chuyển thành điện áp |
+| ESP32 đọc điện áp bằng ADC | ESP32 có thể đọc điện áp đã được xử lý phù hợp bằng ADC |
+| Firmware kiểm tra ngưỡng và bật/tắt cảnh báo | Firmware xử lý tín hiệu đã hiệu chuẩn để quyết định cảnh báo |
+| App hiển thị “Mức mùi” và “Có mùi hôi” | Cùng luồng MQTT và giao diện có thể dùng với nguồn dữ liệu cảm biến thật |
+
+Trong demo, tín hiệu ADC lớn hơn 2000 bật cảnh báo; giảm xuống 1800 hoặc thấp hơn thì xóa cảnh báo. Hai ngưỡng giúp tránh trạng thái bật/tắt liên tục gần ranh giới. UI hiển thị **Mức mùi: Bình thường / Cao** và **Có mùi hôi · Cần kiểm tra và vệ sinh thùng**. Đây là quy ước của kịch bản demo, chưa phải phép đo cường độ mùi thực tế, ppm hay mức độc hại.
+
+### Cảm biến đề xuất khi làm phần cứng thật
+
+**Figaro TGS2602** là lựa chọn đáng thử cho bản nguyên mẫu: nhà sản xuất mô tả cảm biến nhạy với VOC và các khí gây mùi như ammonia, H₂S, kể cả khí phát sinh từ chất thải. Phần tử nhạy khí thuộc loại bán dẫn oxit kim loại; khi có khí phù hợp, độ dẫn thay đổi và mạch đo chuyển thành tín hiệu điện áp. Nguyên lý đó phù hợp với việc dùng biến trở làm nguồn tín hiệu thay thế trong demo. Xem [thông tin sản phẩm Figaro](https://www.figaro.co.jp/en/product/entry/tgs2602.html) và [datasheet TGS2602](https://www.figaro.co.jp/en/product/docs/tgs2602_product%20information%28en%29_rev04.pdf).
+
+Biến trở không mô phỏng đầy đủ phản ứng hóa học, độ trễ, thời gian làm nóng, ảnh hưởng nhiệt độ/độ ẩm hoặc phản ứng chéo với các khí khác. TGS2602 cũng không phân biệt riêng mọi loại mùi rác. Vì vậy, việc lựa chọn cuối cùng và ngưỡng cảnh báo phải được kiểm tra với loại rác, vị trí lắp và môi trường sử dụng thực tế.
+
+Khi chuyển sang phần cứng thật, cần thiết kế nguồn gia nhiệt/mạch đo theo datasheet, bảo đảm điện áp tín hiệu phù hợp đầu vào ESP32, lấy mẫu nền và hiệu chuẩn lại ngưỡng. Không thay cảm biến vào là mặc nhiên dùng nguyên ngưỡng ADC demo. Phần MQTT, giao diện và luồng cảnh báo có thể tái sử dụng; phần đọc/xử lý cảm biến được điều chỉnh theo linh kiện đã chọn.
 
 <a id="structure"></a>
 ## 📂 Cấu trúc dự án
@@ -169,7 +196,7 @@ Sau khi thiết lập:
 2. Giữ tay trong vùng nhận diện để quan sát nắp tiếp tục mở.
 3. Đưa tay ra xa và chờ khoảng 3 giây để nắp đóng.
 4. Khi nắp đã đóng, giảm khoảng cách tới mặt rác để quan sát mức đầy và cảnh báo.
-5. Điều chỉnh biến trở để quan sát cảnh báo khí hoạt động độc lập.
+5. Điều chỉnh biến trở để giả lập mùi tăng/giảm; quan sát “Mức mùi” và cảnh báo “Có mùi hôi” trên app.
 
 Khi theo dõi dữ liệu từ mô phỏng, tắt chế độ minh họa trong ứng dụng. Chú ý trạng thái cập nhật và thời gian nhận dữ liệu khi đọc cảnh báo.
 
