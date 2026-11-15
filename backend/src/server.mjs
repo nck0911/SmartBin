@@ -2,10 +2,11 @@ import { createServer } from 'node:http';
 import { mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import mqtt from 'mqtt';
-import { Store } from './store.mjs';
-import { processReading } from './alerts.mjs';
-import { ExpoSender, deliver } from './delivery.mjs';
-import { createHandler } from './http.mjs';
+import { Store } from './storage/store.mjs';
+import { processReading } from './services/notifications/alerts.mjs';
+import { deliver } from './services/notifications/delivery.mjs';
+import { ExpoSender } from './integrations/expoPush.mjs';
+import { createHandler } from './http/handler.mjs';
 
 const pairingCode = process.env.PAIRING_CODE;
 if (!pairingCode || pairingCode.length < 16) throw new Error('Set PAIRING_CODE to at least 16 characters.');
@@ -33,7 +34,7 @@ const timer = setInterval(async () => {
 }, 1000);
 const server = createServer(createHandler({ store, pairingCode, devices, appBrokerUrl: process.env.APP_BROKER_URL, isConnected: () => client.connected }));
 server.requestTimeout = 10_000;
-server.listen(Number(process.env.PORT || 8787), process.env.HOST || '127.0.0.1', () => console.log('Notification service listening.'));
+server.listen(Number(process.env.PORT || 8787), process.env.HOST || '127.0.0.1', () => console.log('Smart Trash backend listening.'));
 function shutdown() { clearInterval(timer); client.end(true); server.close(); /* OS closes SQLite after pending work exits. */ }
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);

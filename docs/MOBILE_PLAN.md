@@ -23,6 +23,8 @@ Danh sách → chi tiết → sửa; thêm thùng và cấu hình broker bằng 
 ## Chưa thuộc bản đầu
 
 Tài khoản người dùng, lịch sử telemetry bền và đo mùi thực tế. Backend thông báo đã có; cấu hình Expo/Firebase/APNs, hosting và kiểm chứng push trên thiết bị vẫn phải hoàn tất. Chi tiết ở [NOTIFICATIONS.md](NOTIFICATIONS.md).
+
+Backend nằm trong `backend/`, có `src/services/notifications` và `src/services/registrations`. Các service là module chức năng chạy chung, còn HTTP, SQLite và adapter Expo được tách riêng; xem [cấu trúc backend](../backend/README.md#tổ-chức-mã-nguồn).
 Public broker chỉ dùng demo; không nhập dữ liệu bí mật. Cấu hình lưu trên máy không chứa mật khẩu.
 
 ## Kiểm chứng

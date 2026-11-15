@@ -142,7 +142,11 @@ Khi chuyển sang phần cứng thật, cần thiết kế nguồn gia nhiệt/m
 │   ├── src/          # Mô hình dữ liệu và kết nối
 │   ├── assets/       # Tài nguyên hình ảnh
 │   └── test/         # Kiểm thử logic ứng dụng
-├── notification-service/ # Theo dõi MQTT và gửi push
+├── backend/          # HTTP, theo dõi MQTT và gửi push
+│   ├── src/services/ # Chức năng thông báo và đăng ký
+│   ├── src/http/     # Xử lý HTTP
+│   ├── src/storage/  # Truy cập SQLite
+│   └── src/integrations/ # Kết nối dịch vụ bên ngoài
 ├── test/             # Kiểm thử logic firmware
 ├── scripts/          # Script hỗ trợ kiểm thử
 ├── docs/             # Tài liệu kỹ thuật
@@ -211,7 +215,7 @@ Trong app, mở **Thông báo → Thiết lập thông báo** để bật nhận
 - **Khi đang mở app:** ứng dụng tạo thông báo khi đang nhận dữ liệu; có nút gửi thông báo thử.
 - **Kể cả khi đóng app:** dịch vụ theo dõi MQTT độc lập gửi push qua Expo tới điện thoại. Cần bản ứng dụng cài riêng và hoàn tất thiết lập dịch vụ; Expo Go không cung cấp remote push Android.
 
-Luồng phần mềm đã có trong repository; việc nhận push thật cần cấu hình tài khoản và kiểm chứng trên thiết bị. Xem [hướng dẫn thông báo](docs/NOTIFICATIONS.md) và [dịch vụ theo dõi](notification-service/README.md).
+Luồng phần mềm đã có trong repository; việc nhận push thật cần cấu hình tài khoản và kiểm chứng trên thiết bị. Xem [hướng dẫn thông báo](docs/NOTIFICATIONS.md) và [dịch vụ theo dõi](backend/README.md).
 
 <a id="testing"></a>
 ## 🧪 Kiểm thử

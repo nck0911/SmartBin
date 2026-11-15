@@ -142,7 +142,7 @@ Nếu PowerShell chặn script `npm.ps1`, dùng `npm.cmd` thay cho `npm` (ví d�
 - Cờ `full` và `gas_high` lấy từ firmware. UI gọi `gas_high` là cảnh báo mùi hôi, hiển thị “Mức mùi: Bình thường / Cao”. Trong demo, nguồn tín hiệu là biến trở; không quy đổi ADC thành ppm hoặc phần trăm mùi. Xem [giải thích mô phỏng và cảm biến thực tế](../README.md#odor-simulation).
 - Bản tin retained được đánh dấu dữ liệu cũ cho đến khi có bản tin mới. Không có bản tin mới trong 15 giây cũng được đánh dấu cũ. Khi broker mất kết nối không thể kết luận riêng thiết bị offline.
 - Danh sách và URL broker lưu trên máy bằng AsyncStorage; không lưu tài khoản/mật khẩu.
-- Có thiết lập thông báo khi app đang nhận dữ liệu và luồng push qua `notification-service/` khi app không mở. Remote push cần APK/bản native có cấu hình Expo/Firebase/APNs và backend chạy liên tục; Expo Go Android chỉ thử local notification. Chưa có lịch sử telemetry.
+- Có thiết lập thông báo khi app đang nhận dữ liệu và luồng push qua `backend/` khi app không mở. Remote push cần APK/bản native có cấu hình Expo/Firebase/APNs và backend chạy liên tục; Expo Go Android chỉ thử local notification. Chưa có lịch sử telemetry.
 
 ## Thông báo đầy và mùi hôi
 

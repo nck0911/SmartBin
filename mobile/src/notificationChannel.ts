@@ -1,7 +1,7 @@
 import type { NotificationChannelInput } from 'expo-notifications';
 
 // New ID avoids reusing a channel created with null/custom audio attributes.
-// Keep the service's channelId in sync: notification-service/src/alerts.mjs.
+// Keep the service's channelId in sync: backend/src/services/notifications/alerts.mjs.
 export const ALERT_CHANNEL_ID = 'trash-alerts-v2';
 export function notificationChannelId(platform: string, version: number, isExpoGo: boolean): string | null {
   // Expo Go owns its native channels. Immediate local notifications can use

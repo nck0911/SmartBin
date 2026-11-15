@@ -76,7 +76,7 @@ Cloud build tải source lên Expo; chọn cấu hình ký app theo CLI. Cài AP
 <a id="service"></a>
 ## 4. Chạy dịch vụ theo dõi
 
-Làm theo [notification-service/README.md](../notification-service/README.md). Dịch vụ dùng Node.js + MQTT + SQLite, phải chạy trên một máy có Internet ngay cả khi người dùng đóng app.
+Làm theo [backend/README.md](../backend/README.md). Dịch vụ dùng Node.js + MQTT + SQLite, phải chạy trên một máy có Internet ngay cả khi người dùng đóng app.
 
 ```text
 ESP32 → MQTT broker → Notification service → Expo Push → FCM/APNs → Điện thoại
@@ -115,7 +115,7 @@ cd mobile
 npm run lint
 npm run typecheck
 npm test
-cd ../notification-service
+cd ../backend
 npm test
 ```
 

@@ -1,5 +1,5 @@
 {
-  "name": "smart-trash-notification-service",
+  "name": "smart-trash-backend",
   "private": true,
   "type": "module",
   "engines": { "node": ">=22.13.0" },

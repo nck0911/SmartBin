@@ -1,13 +1,42 @@
-# Dịch vụ thông báo Smart Trash
+# Backend Smart Trash
 
 Dịch vụ Node.js theo dõi MQTT độc lập với điện thoại, lưu trạng thái cảnh báo và gửi Expo Push. App có thể không mở; dịch vụ này vẫn phải chạy, có Internet và kết nối đúng broker.
+
+## Tổ chức mã nguồn
+
+```text
+backend/
+├── src/
+│   ├── server.mjs                    # Khởi động HTTP, MQTT và worker
+│   ├── http/
+│   │   └── handler.mjs               # Route, đọc body, phản hồi HTTP
+│   ├── services/
+│   │   ├── notifications/
+│   │   │   ├── alerts.mjs            # Chuyển trạng thái cảnh báo, tạo nội dung
+│   │   │   └── delivery.mjs          # Hàng đợi, retry, xử lý ticket/receipt
+│   │   └── registrations/
+│   │       └── registrations.mjs     # Quy tắc đăng ký, cập nhật và thu hồi
+│   ├── integrations/
+│   │   └── expoPush.mjs              # Gọi API nhà cung cấp Expo Push
+│   ├── storage/
+│   │   └── store.mjs                 # Truy cập SQLite
+│   └── security/
+│       └── credentials.mjs           # So sánh thông tin xác thực
+├── test/                             # Kiểm tra nghiệp vụ và API
+├── data/                             # Database riêng, không commit
+└── package.json
+```
+
+`services/` nhóm mã theo chức năng, không phải các microservice chạy riêng. Backend dùng một tiến trình và một database. HTTP chuyển yêu cầu sang service đăng ký; service không phụ thuộc request/response HTTP. Service thông báo dùng store và đối tượng gửi push; adapter Expo xử lý giao tiếp bên ngoài. `server.mjs` ghép các thành phần và quản lý vòng đời.
+
+Khi có chức năng mới, thêm module như `services/devices/` hoặc `services/history/` khi thực sự cần, rồi nối vào HTTP/khởi động. Không tạo server hay sao chép database riêng chỉ vì thêm một service.
 
 ## Chạy
 
 Cần Node.js 22.13 trở lên. Từ gốc repository:
 
 ```powershell
-cd notification-service
+cd backend
 npm ci
 Copy-Item .env.example .env
 ```

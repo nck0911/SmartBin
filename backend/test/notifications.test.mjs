@@ -4,10 +4,11 @@ import { createServer } from 'node:http';
 import { mkdirSync, existsSync, unlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { Store } from '../src/store.mjs';
-import { processReading } from '../src/alerts.mjs';
-import { deliver, ExpoSender } from '../src/delivery.mjs';
-import { createHandler } from '../src/http.mjs';
+import { Store } from '../src/storage/store.mjs';
+import { processReading } from '../src/services/notifications/alerts.mjs';
+import { deliver } from '../src/services/notifications/delivery.mjs';
+import { ExpoSender } from '../src/integrations/expoPush.mjs';
+import { createHandler } from '../src/http/handler.mjs';
 
 const device = { id: 'bin-a', topic: 'test/bin-a', name: 'Thùng phòng bếp' };
 const token = 'ExpoPushToken[12345678abcd]';

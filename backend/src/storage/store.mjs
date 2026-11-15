@@ -1,10 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
-import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-
-const hash = value => createHash('sha256').update(value).digest();
-export function matches(value, expected) {
-  return typeof value === 'string' && timingSafeEqual(hash(value), hash(expected));
-}
+import { randomBytes, randomUUID } from 'node:crypto';
+import { matches } from '../security/credentials.mjs';
 export class Store {
   constructor(filename = ':memory:', brokerUrl = '') {
     this.brokerUrl = brokerUrl;
@@ -17,6 +13,7 @@ export class Store {
         ticket TEXT, ticket_token TEXT);`);
   }
   get(id) { return this.db.prepare('SELECT * FROM installations WHERE id=?').get(id); }
+  registrationCount() { return this.db.prepare('SELECT COUNT(*) AS n FROM installations').get().n; }
   authorize(id, secret) { const row = this.get(id); return !!row && matches(secret, row.secret); }
   register(id, token, bins, secret) {
     const credential = secret || randomBytes(32).toString('hex');
