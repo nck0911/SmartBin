@@ -28,6 +28,7 @@ void setup() {
   commandServo(false);
   hand.begin();
   trash.begin();
+  environment.setHeight(Telemetry::loadHeight());
   closedAt = millis();
   telemetryReady = Telemetry::begin();
   Serial.println("[BOOT] Smart trash Nhom 10: local control + independent MQTT task");
@@ -35,6 +36,14 @@ void setup() {
 }
 void loop() {
   const uint32_t now = millis();
+  BinSettings::Request settings;
+  const bool settingsChanged = telemetryReady && Telemetry::takeSettings(settings);
+  if (settingsChanged) {
+    environment.setHeight(settings.heightMm);
+    trashRefreshNeeded = true;
+    closedAt = now;
+    Telemetry::settingsApplied(settings);
+  }
   hand.poll(now);
   const bool trashDone = trash.poll(now);
   const bool fullBefore = environment.full, gasBefore = environment.gasHigh;
@@ -84,8 +93,9 @@ void loop() {
   s.gasValid = environment.gasHasSample;
   s.full = environment.full;
   s.gasHigh = environment.gasHigh;
+  s.heightMm = environment.heightMm;
   static bool oldHandValid = false, oldTrashValid = false, oldStale = true;
-  const bool event = lidChanged || alarmChanged || s.handValid != oldHandValid ||
+  const bool event = settingsChanged || lidChanged || alarmChanged || s.handValid != oldHandValid ||
                      s.trashValid != oldTrashValid || s.trashStale != oldStale;
   oldHandValid = s.handValid;
   oldTrashValid = s.trashValid;
@@ -95,9 +105,11 @@ void loop() {
   if (telemetryReady) Telemetry::update(s, event);
   if (event || uint32_t(now - lastLog) >= Config::telemetryMs) {
     lastLog = now;
-    Serial.printf("[STATE %lu] lid=%s hand=%s fill=%.1f%% valid=%d stale=%d gas=%d full=%d gas_high=%d\n",
+    char fillLabel[24] = "unknown";
+    if (environment.configured() && s.trashValid) snprintf(fillLabel, sizeof(fillLabel), "%.1f%%", s.fill);
+    Serial.printf("[STATE %lu] lid=%s hand=%s fill=%s valid=%d stale=%d gas=%d full=%d gas_high=%d height_mm=%u\n",
       (unsigned long)now, s.lidOpen ? "open" : "closed", s.handValid ? "ok" : "unknown",
-      s.fill, s.trashValid, s.trashStale, s.gas, s.full, s.gasHigh);
+      fillLabel, s.trashValid, s.trashStale, s.gas, s.full, s.gasHigh, unsigned(s.heightMm));
   }
   delay(1); // RTOS yield; no echo or network waits in the control loop.
 }

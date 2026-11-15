@@ -62,19 +62,22 @@ void rollover() {
 void environmentAlarms() {
   EnvironmentMonitor e;
   assert(!e.trashHasSample && !e.gasHasSample);
-  for (const auto cm : {40.0f, 20.0f, 8.0f, 4.0f}) {
+  e.updateTrash(true, 5, 0);
+  assert(!e.configured() && !e.full);
+  assert(e.setHeight(450));
+  for (const auto cm : {45.0f, 25.0f, 13.0f, 5.0f}) {
     e.updateTrash(true, cm, 100);
-    assert(fabs(e.fill - (100 - 2.5f * cm)) < 0.001f);
-    assert(e.full == (cm <= 8.0f));
+    assert(fabs(e.fill - (112.5f - 2.5f * cm)) < 0.001f);
+    assert(e.full == (cm <= 13.0f));
   }
   assert(e.full);
-  e.updateTrash(true, 8.4f, 200); // 79% must not clear a full alarm.
+  e.updateTrash(true, 13.4f, 200); // 79% must not clear a full alarm.
   assert(e.full);
   e.updateTrash(false, 400, 300);
   assert(!e.trashValid && e.full); // Failure cannot invent an empty bin.
   e.updateTrash(true, NAN, 400);
   assert(!e.trashValid && e.full);
-  e.updateTrash(true, 10, 500);
+  e.updateTrash(true, 15, 500);
   assert(!e.full && e.trashValid);
   e.updateGas(2000, 100);
   assert(!e.gasHigh);
@@ -86,8 +89,37 @@ void environmentAlarms() {
   assert(e.gasHigh);
   e.updateGas(1800, 400);
   assert(!e.gasHigh && e.full);
-  assert(EnvironmentMonitor::fillFromDistance(100) == 0);
-  assert(EnvironmentMonitor::fillFromDistance(-1) == 100);
+  assert(EnvironmentMonitor::fillFromDistance(100, 45) == 0);
+  assert(EnvironmentMonitor::fillFromDistance(2, 45) == 100);
+  assert(isnan(EnvironmentMonitor::fillFromDistance(10, 5)));
+  assert(isnan(EnvironmentMonitor::fillFromDistance(NAN, 45)));
+  assert(!e.setHeight(50) && e.heightMm == 450 && e.full);
+  assert(!e.setHeight(4001));
+  assert(e.setHeight(1000));
+  assert(!e.full && !e.trashHasSample && !e.trashValid);
+  e.updateTrash(true, 25, 700);
+  assert(fabs(e.fill - 100.0f * 75 / 95) < 0.001f);
+  assert(e.setHeight(1000) && e.trashValid); // Same height does not invalidate a reading.
+}
+void settingsProtocol() {
+  BinSettings::Request request;
+  const char* valid = "app-1_2:123:15000:450";
+  assert(BinSettings::parse(reinterpret_cast<const uint8_t*>(valid), strlen(valid), request));
+  assert(strcmp(request.id, "app-1_2") == 0 && request.heightMm == 450);
+  assert(BinSettings::current(request, 123, 1000));
+  assert(!BinSettings::current(request, 124, 1000));
+  assert(!BinSettings::current(request, 123, 15000));
+  assert(!BinSettings::current(request, 123, 16000));
+  request.deadline = 500;
+  assert(BinSettings::current(request, 123, UINT32_MAX - 500));
+  for (const char* invalid : {"", ":1:2:450", "a:1:2:-450", "a:1:2:450x", "a:1:2:450:1",
+      "a:1:2:4294967296", "a:1:2:", "a:1:2:45.0", "a\":1:2:450"}) {
+    assert(!BinSettings::parse(reinterpret_cast<const uint8_t*>(invalid), strlen(invalid), request));
+  }
+  assert(BinSettings::validHeight(100));
+  assert(BinSettings::validHeight(4000));
+  assert(!BinSettings::validHeight(0));
+  assert(!BinSettings::validHeight(99));
 }
 int main() {
   quickGestureAndBoundary();
@@ -95,5 +127,6 @@ int main() {
   sensorFailure();
   rollover();
   environmentAlarms();
-  puts("PASS: 5 scenario groups (lid timing, return, failure, rollover, independent alarms)");
+  settingsProtocol();
+  puts("PASS: 6 scenario groups (lid timing, return, failure, rollover, bin height/alarms, settings protocol)");
 }

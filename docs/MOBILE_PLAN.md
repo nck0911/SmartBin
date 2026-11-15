@@ -2,7 +2,7 @@
 
 ## Phạm vi
 
-React Native + Expo + TypeScript trong `mobile/`. Không gửi lệnh điều khiển nắp.
+React Native + Expo + TypeScript trong `mobile/`. Không gửi lệnh điều khiển nắp; có gửi yêu cầu thiết lập chiều cao thùng và chờ thiết bị xác nhận.
 
 1. Danh sách thùng, tìm kiếm và lọc cảnh báo.
 2. Thêm/sửa/xóa tên, vị trí, device ID và MQTT topic root; lưu trên thiết bị.
@@ -11,6 +11,7 @@ React Native + Expo + TypeScript trong `mobile/`. Không gửi lệnh điều kh
 5. Dùng cờ full/gas_high của firmware, không tự suy ra ngưỡng cảnh báo.
 6. Không xem retained state là dữ liệu sống. Chờ bản tin mới và đánh dấu cũ khi không có cập nhật trong 15 giây.
 7. Chế độ demo tách khỏi dữ liệu MQTT, có nhãn rõ ràng.
+8. Thiết lập chiều cao bên trong thùng từ chi tiết, có hướng dẫn đo và hình minh họa; ESP32 lưu NVS, tính phần trăm và trả xác nhận. Mốc đầy cố định 5 cm; chưa thiết lập thì không hiển thị phần trăm.
 
 ## Giao diện
 

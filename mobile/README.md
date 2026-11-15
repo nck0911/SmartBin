@@ -138,13 +138,27 @@ Nếu PowerShell chặn script `npm.ps1`, dùng `npm.cmd` thay cho `npm` (ví d�
 - Thùng mặc định dùng ID/topic trong `include/Secrets.example.h`.
 - Nếu firmware dùng `Secrets.h`, sửa ID và topic trong app tương ứng.
 - Thêm thùng: tên, vị trí, device ID và topic root (không thêm `/#`).
-- App subscribe `state`, `events`, `availability`; không publish lệnh.
+- App subscribe `state`, `events`, `availability` và kết quả thiết lập chiều cao; chỉ gửi yêu cầu thiết lập, không gửi lệnh đóng/mở nắp.
 - Cờ `full` và `gas_high` lấy từ firmware; khí hiện là ADC giả lập.
 - Bản tin retained được đánh dấu dữ liệu cũ cho đến khi có bản tin mới. Không có bản tin mới trong 15 giây cũng được đánh dấu cũ. Khi broker mất kết nối không thể kết luận riêng thiết bị offline.
 - Danh sách và URL broker lưu trên máy bằng AsyncStorage; không lưu tài khoản/mật khẩu.
 - Cảnh báo hiển thị khi app đang mở; chưa có push, backend hoặc lịch sử.
 
 ## Demo và kiểm tra thủ công
+
+### Thiết lập chiều cao thùng
+
+Mở chi tiết thùng → **Thiết lập** → nhập **Chiều cao bên trong thùng (cm)**. Đo từ mặt dưới nắp khi đóng đến đáy bên trong thùng; cảm biến gắn dưới nắp và hướng xuống đáy. Cho phép 10–400 cm, tối đa một chữ số thập phân, chấp nhận dấu phẩy hoặc dấu chấm.
+
+Nhấn **Lưu thiết lập**, chờ ESP32 xác nhận rồi chọn **Hoàn tất**. Thiết lập lưu trên ESP32; không cần nạp lại firmware khi chuyển thùng. Trước khi thiết lập, app không hiển thị phần trăm đầy. Sau khi đổi chiều cao, chờ nắp đóng và một lượt đo mới.
+
+Mốc đầy cố định là khoảng cách 5 cm từ mặt cảm biến tới rác; cảnh báo bật ở 80%, xóa ở 75%. Ví dụ chiều cao 45 cm và cảm biến lắp phẳng với mặt dưới nắp: khoảng cách 45 cm → 0%, 25 cm → 50%, 13 cm → 80%, 5 cm → 100%.
+
+Thiết bị cần chạy firmware hỗ trợ thiết lập chiều cao và gửi dữ liệu mới. Firmware cũ vẫn đọc được trạng thái/khí nhưng cần cập nhật để thiết lập và xem phần trăm. Nếu mất kết nối/hết thời gian chờ, ứng dụng không báo thành công; thiết lập có thể đã được lưu trên thiết bị nên kiểm tra dữ liệu mới trước khi thử lại. Chế độ minh họa chỉ đổi chiều cao giả lập, không gửi xuống thiết bị thật.
+
+Trên ESP32 thật, thiết lập lưu trong NVS qua lần khởi động lại. Môi trường mô phỏng có thể tạo lại bộ nhớ flash khi bắt đầu phiên mới; nếu mất thiết lập thì nhập lại.
+
+### Các thao tác cần kiểm tra
 
 Bật **Chế độ minh họa** để xem dữ liệu giả lập. Thêm thùng demo thứ hai để thấy đồng thời cảnh báo đầy và khí. Tắt demo để quay về MQTT; dữ liệu giả lập được xóa khỏi bộ nhớ đọc. Các thùng demo vẫn trong danh sách, có thể xóa bằng màn hình chi tiết.
 
@@ -159,7 +173,8 @@ Bật **Chế độ minh họa** để xem dữ liệu giả lập. Thêm thùng
 
 ```powershell
 npx tsc --noEmit
-node --experimental-strip-types --test test/model.test.ts
+npm run lint
+npm test
 npx expo export --platform web
 ```
 

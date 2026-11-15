@@ -15,6 +15,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.3.0",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~58.0.4",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -23,7 +25,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test test/model.test.ts"
+    "lint": "expo lint App.tsx index.ts src test",
+    "test": "node --experimental-strip-types --test test/model.test.ts test/heightSettings.test.ts"
   },
   "private": true
 }

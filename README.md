@@ -52,6 +52,7 @@ Phạm vi hiện tại là mô phỏng và demo. Chỉ số khí được tạo 
 - **Xem chi tiết:** thông tin thiết bị, lệnh nắp và thời gian nhận dữ liệu gần nhất.
 - **Nhận biết trạng thái:** phân biệt mất kết nối, thiết bị offline, chờ dữ liệu và dữ liệu cũ.
 - **Lưu danh sách:** giữ thông tin thùng trên thiết bị để sử dụng khi mở lại ứng dụng.
+- **Thiết lập chiều cao:** nhập chiều cao bên trong thùng trên app, lưu trên ESP32 và dùng lại sau khi khởi động.
 - **Chế độ minh họa:** trải nghiệm giao diện và cảnh báo mà không cần ESP32.
 
 Ứng dụng nhận dữ liệu để theo dõi; việc đóng/mở nắp do firmware điều khiển tại thiết bị. Cảnh báo hiện hiển thị khi ứng dụng đang mở.
@@ -160,7 +161,9 @@ Nhấn `Ctrl+C` để dừng. Hướng dẫn mobile chi tiết nằm trong [mobi
 
 **Với ứng dụng:** bật **Chế độ minh họa**, thêm thùng demo có cảnh báo, thử tìm kiếm, lọc và mở chi tiết. Chế độ này sử dụng dữ liệu giả lập riêng để trải nghiệm giao diện.
 
-**Với mô phỏng Wokwi:**
+**Với mô phỏng Wokwi:** mở chi tiết thùng trong app, chọn **Thiết lập**, nhập **Chiều cao bên trong thùng** và chờ xác nhận. Đo từ mặt dưới nắp khi đóng đến đáy bên trong thùng. Với cảm biến gắn dưới nắp, hướng xuống đáy, mức đầy được tính theo chiều cao đã nhập; khoảng trống 5 cm tương ứng 100%.
+
+Sau khi thiết lập:
 
 1. Đưa khoảng cách cảm biến tay về 10 cm và giữ trên 500 ms để mở nắp.
 2. Giữ tay trong vùng nhận diện để quan sát nắp tiếp tục mở.
@@ -184,6 +187,7 @@ Kiểm tra TypeScript và mô hình dữ liệu mobile:
 ```sh
 cd mobile
 npm run typecheck
+npm run lint
 npm test
 ```
 

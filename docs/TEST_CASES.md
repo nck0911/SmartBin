@@ -18,15 +18,17 @@
 
 ## Chưa chạy tương tác Wokwi
 
+Với firmware hỗ trợ chiều cao động, trước các ca đo mức đầy, dùng app thiết lập chiều cao **45 cm** và chờ ACK. Bảng runtime dưới đây dùng chiều cao đó, mốc đầy 5 cm và sensorOffsetCm=0. Kiểm tra riêng trạng thái chưa thiết lập và lưu NVS theo [BIN_HEIGHT.md](BIN_HEIGHT.md). Kết quả build/host test trong phần đầu là báo cáo lịch sử trước refactor.
+
 Máy đã có extension Wokwi nhưng phiên agent không có công cụ điều khiển giao diện VS Code hoặc Wokwi CLI trên PATH. Chưa xác minh license hay khởi chạy được simulator từ phiên này. Không đánh dấu pass cho các ca runtime sau chỉ dựa vào build/host test.
 
 | Ca | Thao tác theo README | Cần quan sát/lưu bằng chứng | Trạng thái |
 | --- | --- | --- | --- |
-| W01 | Start Simulator, tay 50 cm, rác 35 cm, khí thấp | Không reset; lệnh nắp đóng; sau đo có mức rác khoảng 12,5% | Chờ chạy |
+| W01 | Start Simulator, thiết lập chiều cao 45 cm, tay 50 cm, rác 35 cm, khí thấp | Không reset; lệnh nắp đóng; sau đo có mức rác khoảng 25% | Chờ chạy |
 | W02 | Tay 10 cm trong 300 ms rồi rút | Servo không mở | Chờ chạy |
 | W03 | Tay 10 cm trên 500 ms, giữ >3 giây | Servo tới góc mở, giữ nguyên; timestamp Serial | Chờ chạy |
 | W04 | Rút tay, đưa lại trước 3 giây, rút lần nữa | Hủy đóng lần đầu, đóng sau lần rút cuối | Chờ chạy |
-| W05 | Nắp đóng; rác lần lượt 40/20/7/10 cm | Mức rác thay đổi theo chu kỳ; đầy bật ở 7 cm và xóa ở khoảng 10 cm | Chờ chạy |
+| W05 | Nắp đóng; chiều cao 45 cm; rác lần lượt 45/25/12/15 cm | Mức rác khoảng 0/50/82,5/75%; đầy bật ở 12 cm và xóa ở 15 cm | Chờ chạy |
 | W06 | Khí cao khi rác thấp, sau đó vừa đầy vừa khí cao | Serial và MQTT có cờ độc lập/cả hai cờ | Chờ chạy |
 | W07 | Connect trang HiveMQ, subscribe topic nhóm | Nhận JSON state/events và availability thật từ ESP32 mô phỏng | Chờ chạy |
 | W08 | Mở nắp lúc đang báo đầy rồi đóng | `trash_stale=true` đến phép đo mới sau đóng ổn định; không kết luận rỗng khi nắp mở | Chờ chạy |

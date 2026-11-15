@@ -1,5 +1,5 @@
 export type Bin = { id: string; name: string; location: string; topic: string };
-export type Telemetry = { schema: 1; device_id: string; fill_percent: number | null; gas_adc: number | null; trash_valid: boolean; trash_stale: boolean; gas_valid: boolean; full: boolean; gas_high: boolean; lid_command: 'open' | 'closed'; uptime_ms: number };
+export type Telemetry = { schema: 1; device_id: string; fill_percent: number | null; gas_adc: number | null; trash_valid: boolean; trash_stale: boolean; gas_valid: boolean; full: boolean; gas_high: boolean; lid_command: 'open' | 'closed'; uptime_ms: number; configured?: boolean; bin_height_cm?: number | null; settings_session?: number };
 export type Reading = { data?: Telemetry; receivedAt?: number; liveAt?: number; availability?: string };
 export const initialBin: Bin = { id: 'nhom10-trash-7c91a2', name: 'Thùng rác nhóm 10', location: 'Phòng thực hành', topic: 'nhom10/trash/nhom10-trash-7c91a2' };
 export function decode(raw: string, id: string): Telemetry | null {
@@ -10,6 +10,12 @@ export function decode(raw: string, id: string): Telemetry | null {
     if (!(d.fill_percent === null || (Number.isFinite(d.fill_percent) && d.fill_percent >= 0 && d.fill_percent <= 100))) return null;
     if (!(d.gas_adc === null || (Number.isInteger(d.gas_adc) && d.gas_adc >= 0 && d.gas_adc <= 4095))) return null;
     if (!Number.isFinite(d.uptime_ms) || d.uptime_ms < 0) return null;
+    // Older firmware can still supply gas/status, but cannot supply trusted fill %.
+    if (['configured','bin_height_cm','settings_session'].some(k => k in d)) {
+      if (typeof d.configured !== 'boolean' || !Number.isInteger(d.settings_session) || d.settings_session <= 0 || d.settings_session > 0xffffffff) return null;
+      if (d.configured ? !(Number.isFinite(d.bin_height_cm) && d.bin_height_cm >= 10 && d.bin_height_cm <= 400) : d.bin_height_cm !== null) return null;
+      if (!d.configured && (d.fill_percent !== null || d.full)) return null;
+    }
     return d;
   } catch { return null; }
 }
