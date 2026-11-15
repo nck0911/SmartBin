@@ -142,7 +142,20 @@ Nếu PowerShell chặn script `npm.ps1`, dùng `npm.cmd` thay cho `npm` (ví d�
 - Cờ `full` và `gas_high` lấy từ firmware. UI gọi `gas_high` là cảnh báo mùi hôi, hiển thị “Mức mùi: Bình thường / Cao”. Trong demo, nguồn tín hiệu là biến trở; không quy đổi ADC thành ppm hoặc phần trăm mùi. Xem [giải thích mô phỏng và cảm biến thực tế](../README.md#odor-simulation).
 - Bản tin retained được đánh dấu dữ liệu cũ cho đến khi có bản tin mới. Không có bản tin mới trong 15 giây cũng được đánh dấu cũ. Khi broker mất kết nối không thể kết luận riêng thiết bị offline.
 - Danh sách và URL broker lưu trên máy bằng AsyncStorage; không lưu tài khoản/mật khẩu.
-- Cảnh báo hiển thị khi app đang mở; chưa có push, backend hoặc lịch sử.
+- Có thiết lập thông báo khi app đang nhận dữ liệu và luồng push qua `notification-service/` khi app không mở. Remote push cần APK/bản native có cấu hình Expo/Firebase/APNs và backend chạy liên tục; Expo Go Android chỉ thử local notification. Chưa có lịch sử telemetry.
+
+## Thông báo đầy và mùi hôi
+
+Mở **Thông báo → Thiết lập thông báo**:
+
+- **Bật khi đang mở app:** xin quyền thông báo, tạo thông báo hệ thống khi nhận cảnh báo mới. Thử bằng Expo Go trên điện thoại; không dùng để nhận sự kiện mới lúc app xuống nền.
+- **Gửi thông báo thử:** kiểm tra quyền và hiển thị trên điện thoại. Không chứng minh đã cấu hình push nền thành công.
+- **Bật kể cả khi đóng app:** cần bản app riêng. Nhập địa chỉ HTTPS và mã ghép nối của dịch vụ; app đăng ký token và danh sách thùng. Thông tin truy cập riêng lưu bằng SecureStore.
+- **Tắt thông báo:** với push, cần dịch vụ xác nhận xóa đăng ký; nếu mất mạng, app sẽ báo chưa tắt được thay vì báo thành công.
+
+Không thông báo lặp mỗi 2 giây. Dữ liệu retained-only/invalid/stale không tạo cảnh báo đầy mới. Bấm thông báo mở chi tiết đúng ID/topic/broker. Demo tạo thông báo có nhãn “Thử”, không gửi dữ liệu giả lên dịch vụ. Push thật vẫn hoạt động độc lập khi app đang xem demo.
+
+Hướng dẫn từ bước tạo Expo project, Firebase, build APK và chạy backend: [docs/NOTIFICATIONS.md](../docs/NOTIFICATIONS.md).
 
 ## Demo và kiểm tra thủ công
 

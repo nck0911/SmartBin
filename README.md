@@ -17,6 +17,7 @@ Dự án sử dụng Wokwi để mô phỏng thiết bị, giúp tìm hiểu cá
 - [Cấu trúc dự án](#structure)
 - [Hướng dẫn chạy](#getting-started)
 - [Trải nghiệm demo](#demo)
+- [Thông báo trên điện thoại](#notifications)
 - [Kiểm thử](#testing)
 - [Hướng phát triển](#roadmap)
 
@@ -55,8 +56,9 @@ Phạm vi hiện tại là mô phỏng và demo. Tín hiệu mùi được giả
 - **Lưu danh sách:** giữ thông tin thùng trên thiết bị để sử dụng khi mở lại ứng dụng.
 - **Thiết lập chiều cao:** nhập chiều cao bên trong thùng trên app, lưu trên ESP32 và dùng lại sau khi khởi động.
 - **Chế độ minh họa:** trải nghiệm giao diện và cảnh báo mà không cần ESP32.
+- **Thông báo:** nhắc thu gom hoặc vệ sinh khi thùng chuyển sang cảnh báo; có chế độ khi mở app và luồng push qua dịch vụ theo dõi độc lập.
 
-Ứng dụng nhận dữ liệu để theo dõi; việc đóng/mở nắp do firmware điều khiển tại thiết bị. Cảnh báo hiện hiển thị khi ứng dụng đang mở.
+Ứng dụng nhận dữ liệu để theo dõi; việc đóng/mở nắp do firmware điều khiển tại thiết bị. Push khi không mở app cần bản cài riêng, quyền thông báo và dịch vụ gửi push đã được thiết lập.
 
 <a id="technology"></a>
 ## 🧰 Công nghệ sử dụng
@@ -140,6 +142,7 @@ Khi chuyển sang phần cứng thật, cần thiết kế nguồn gia nhiệt/m
 │   ├── src/          # Mô hình dữ liệu và kết nối
 │   ├── assets/       # Tài nguyên hình ảnh
 │   └── test/         # Kiểm thử logic ứng dụng
+├── notification-service/ # Theo dõi MQTT và gửi push
 ├── test/             # Kiểm thử logic firmware
 ├── scripts/          # Script hỗ trợ kiểm thử
 ├── docs/             # Tài liệu kỹ thuật
@@ -200,6 +203,16 @@ Sau khi thiết lập:
 
 Khi theo dõi dữ liệu từ mô phỏng, tắt chế độ minh họa trong ứng dụng. Chú ý trạng thái cập nhật và thời gian nhận dữ liệu khi đọc cảnh báo.
 
+<a id="notifications"></a>
+## 🔔 Thông báo trên điện thoại
+
+Trong app, mở **Thông báo → Thiết lập thông báo** để bật nhận nhắc nhở khi thùng đầy hoặc có mùi hôi. Thông báo chỉ phát khi trạng thái chuyển sang cảnh báo, tránh lặp lại theo mỗi bản tin MQTT. Bấm thông báo để mở chi tiết thùng.
+
+- **Khi đang mở app:** ứng dụng tạo thông báo khi đang nhận dữ liệu; có nút gửi thông báo thử.
+- **Kể cả khi đóng app:** dịch vụ theo dõi MQTT độc lập gửi push qua Expo tới điện thoại. Cần bản ứng dụng cài riêng và hoàn tất thiết lập dịch vụ; Expo Go không cung cấp remote push Android.
+
+Luồng phần mềm đã có trong repository; việc nhận push thật cần cấu hình tài khoản và kiểm chứng trên thiết bị. Xem [hướng dẫn thông báo](docs/NOTIFICATIONS.md) và [dịch vụ theo dõi](notification-service/README.md).
+
 <a id="testing"></a>
 ## 🧪 Kiểm thử
 
@@ -224,6 +237,6 @@ Các nhóm kiểm thử tập trung vào thời gian mở/đóng nắp, tay quay
 ## 🌿 Hướng phát triển
 
 - Kiểm chứng toàn bộ luồng thiết bị, MQTT và ứng dụng trên điện thoại.
-- Bổ sung lịch sử dữ liệu và thông báo đẩy.
+- Bổ sung lịch sử dữ liệu; hoàn tất cấu hình và kiểm chứng thông báo đẩy trên thiết bị.
 - Mở rộng kiểm thử kết nối, lưu trữ và giao diện.
 - Hoàn thiện phần cứng thật, hiệu chuẩn cảm biến và phản hồi trạng thái nắp.

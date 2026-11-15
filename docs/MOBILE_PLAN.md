@@ -12,6 +12,7 @@ React Native + Expo + TypeScript trong `mobile/`. Không gửi lệnh điều kh
 6. Không xem retained state là dữ liệu sống. Chờ bản tin mới và đánh dấu cũ khi không có cập nhật trong 15 giây.
 7. Chế độ demo tách khỏi dữ liệu MQTT, có nhãn rõ ràng.
 8. Thiết lập chiều cao bên trong thùng từ chi tiết, có hướng dẫn đo và hình minh họa; ESP32 lưu NVS, tính phần trăm và trả xác nhận. Mốc đầy cố định 5 cm; chưa thiết lập thì không hiển thị phần trăm.
+9. Thiết lập thông báo: local khi app nhận dữ liệu và remote push bằng backend theo dõi MQTT. Chống lặp theo chuyển trạng thái, bấm mở thùng, lưu đăng ký và xác nhận bật/tắt. Remote push cần cấu hình riêng trước khi dùng trên thiết bị.
 
 ## Giao diện
 
@@ -21,7 +22,7 @@ Danh sách → chi tiết → sửa; thêm thùng và cấu hình broker bằng 
 
 ## Chưa thuộc bản đầu
 
-Tài khoản, backend, lịch sử bền, push notification khi đóng app và đo mùi thực tế.
+Tài khoản người dùng, lịch sử telemetry bền và đo mùi thực tế. Backend thông báo đã có; cấu hình Expo/Firebase/APNs, hosting và kiểm chứng push trên thiết bị vẫn phải hoàn tất. Chi tiết ở [NOTIFICATIONS.md](NOTIFICATIONS.md).
 Public broker chỉ dùng demo; không nhập dữ liệu bí mật. Cấu hình lưu trên máy không chứa mật khẩu.
 
 ## Kiểm chứng
