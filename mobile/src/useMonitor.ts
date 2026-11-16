@@ -27,7 +27,7 @@ export function useMonitor() {
       if (!raw) return;
       const saved = JSON.parse(raw);
       if (Array.isArray(saved.bins) && saved.bins.every((b: Bin) => b && ['id','name','location','topic'].every(k => typeof (b as any)[k] === 'string')) && typeof saved.broker === 'string' && /^wss:\/\//.test(saved.broker)) {
-        setBins(saved.bins); setBroker(saved.broker);
+        setBins(saved.bins.map((b: Bin) => b.id === initialBin.id && b.name === 'Thùng rác nhóm 10' ? { ...b, name: initialBin.name } : b)); setBroker(saved.broker);
       }
     }).catch(() => setError('Không đọc được cấu hình đã lưu.')).finally(() => setReady(true));
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -64,11 +64,11 @@ export function useMonitor() {
     client.on('connect', () => {
       setConnected(true); setError('');
       const topics = bins.flatMap(b => ['state','events','availability','config/result'].map(s => `${b.topic}/${s}`));
-      if (topics.length) client.subscribe(topics, err => { if (err) setError('Không đăng ký được topic MQTT.'); });
+      if (topics.length) client.subscribe(topics, err => { if (err) setError('Không thể theo dõi dữ liệu thùng. Kiểm tra kết nối rồi thử lại.'); });
     });
     client.on('offline', () => { setConnected(false); requests.current.cancelAll(); });
     client.on('close', () => { setConnected(false); requests.current.cancelAll(); setReadings(old => Object.fromEntries(Object.entries(old).map(([id,r]) => [id,{...r,liveAt: undefined}]))); });
-    client.on('error', () => setError('Không kết nối được MQTT. Đang thử lại…'));
+    client.on('error', () => setError('Không thể kết nối dịch vụ. Đang thử lại…'));
     client.on('message', (topic, payload, packet) => {
       const b = bins.find(b => ['state','events','availability','config/result'].some(s => topic === `${b.topic}/${s}`));
       if (!b) return;
