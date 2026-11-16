@@ -4,7 +4,7 @@ import { HeightRequests, heightCommand, parseHeight } from '../src/heightSetting
 import { decode } from '../src/model.ts';
 
 const data = { schema: 1 as const, device_id: 'a', fill_percent: 50, gas_adc: 1200, trash_valid: true, trash_stale: false, gas_valid: true, full: false, gas_high: false, lid_command: 'closed' as const, uptime_ms: 2000, configured: true, bin_height_cm: 45, settings_session: 123 };
-const reading = { data, receivedAt: 1000, liveAt: 1000 };
+const reading = { data: { ...data, configured: false, bin_height_cm: null, fill_percent: null }, receivedAt: 1000, liveAt: 1000 };
 const response = (id = 'save_1', device = 'a', ok = true) => JSON.stringify({ device_id: device, request_id: id, height_mm: 450, ok, error: ok ? '' : 'storage' });
 
 test('height input accepts centimetres and Vietnamese decimal separators, rejects invalid values', () => {
@@ -31,7 +31,7 @@ test('commands require fresh device data and contain a session, expiry and integ
   assert.throws(() => heightCommand('save_1', 450, reading, 17000));
   assert.throws(() => heightCommand('save_1', 450, { ...reading, availability: 'offline' }, 2000));
   assert.throws(() => heightCommand('save_1', 50, reading, 2000));
-  assert.equal(heightCommand('save_1', 450, { ...reading, data: { ...data, uptime_ms: 0xffffffff - 5000 } }, 1000), 'save_1:123:9999:450');
+  assert.equal(heightCommand('save_1', 450, { ...reading, data: { ...reading.data, uptime_ms: 0xffffffff - 5000 } }, 1000), 'save_1:123:9999:450');
 });
 
 test('broker publication alone cannot confirm a save; only the matching device result resolves it', async () => {
@@ -72,4 +72,14 @@ test('a device cannot receive overlapping saves from the same app', async () => 
   await assert.rejects(tracker.send('save_2', 'a', 460, () => {}), /Đang chờ/);
   tracker.receive(response(), 'a');
   await first;
+});
+
+
+test('preconfigured bins cannot be configured again and device rejection is shown clearly', async () => {
+  assert.throws(() => heightCommand('save_1', 450, { ...reading, data }, 2000), /Không thể thiết lập lại/);
+  const tracker = new HeightRequests();
+  const pending = tracker.send('save_1', 'a', 450, () => {});
+  const rejected = assert.rejects(pending, /Không thể thiết lập lại/);
+  tracker.receive(JSON.stringify({ device_id: 'a', request_id: 'save_1', height_mm: 450, ok: false, error: 'already_configured' }), 'a');
+  await rejected;
 });

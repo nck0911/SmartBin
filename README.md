@@ -55,7 +55,7 @@ Phạm vi hiện tại là mô phỏng và demo. Tín hiệu mùi được giả
 - **Xem chi tiết:** thông tin thiết bị, lệnh nắp và thời gian nhận dữ liệu gần nhất.
 - **Nhận biết trạng thái:** phân biệt mất kết nối, thiết bị offline, chờ dữ liệu và dữ liệu cũ.
 - **Lưu danh sách:** giữ thông tin thùng trên thiết bị để sử dụng khi mở lại ứng dụng.
-- **Thiết lập chiều cao:** nhập chiều cao bên trong thùng trên app, lưu trên ESP32 và dùng lại sau khi khởi động.
+- **Thiết lập chiều cao:** thiết lập chiều cao bên trong thùng một lần trên app, lưu trên ESP32 và dùng lại sau khi khởi động.
 - **Chế độ minh họa:** trải nghiệm giao diện và cảnh báo mà không cần ESP32.
 - **Thông báo:** nhắc thu gom hoặc vệ sinh khi thùng chuyển sang cảnh báo; có chế độ khi mở app và luồng push qua dịch vụ theo dõi độc lập.
 

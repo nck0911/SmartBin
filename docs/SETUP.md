@@ -105,8 +105,8 @@ Thay phần trong `<...>` bằng địa chỉ thật. Nếu máy ảo đã xuấ
 
 1. Chạy Wokwi và tắt **Chế độ minh họa** trong app.
 2. Chọn **Cấu hình kết nối**. Điền địa chỉ broker WebSocket; bản demo mặc định là `wss://broker.hivemq.com:8884/mqtt`. Chọn **Lưu thay đổi**.
-3. Chọn **+ Thêm thùng** hoặc sửa thùng sẵn có. Nhập tên, vị trí, **Device ID** và **MQTT topic root** đúng với firmware.
-4. Mở chi tiết thùng, chờ dữ liệu mới, chọn **Thiết lập**.
+3. Chọn **+ Thêm thùng**. Nhập tên, vị trí, **Mã thiết bị** và **Đường dẫn dữ liệu** đúng với firmware. Với thùng đã thêm, **Sửa thông tin** chỉ cập nhật tên và vị trí.
+4. Mở chi tiết thùng và chờ dữ liệu mới. Nếu thiết bị chưa có chiều cao, chọn **Thiết lập**; thùng đã có cấu hình sẽ không hiện phần này.
 5. Nhập **Chiều cao bên trong thùng**, đo từ mặt dưới nắp đóng đến đáy. Ví dụ 45 cm; chọn lưu và chờ thiết bị xác nhận.
 6. Khi nắp đóng ổn định, thay khoảng cách cảm biến rác để quan sát phần trăm đầy. Với chiều cao 45 cm và cảm biến lắp phẳng: 45/25/13/5 cm tương ứng 0/50/80/100%.
 
@@ -302,7 +302,7 @@ Nút gửi thông báo thử chỉ kiểm tra thông báo trên thiết bị. Ki
 
 - Cùng ứng dụng: sửa code, chạy kiểm tra rồi build lại bằng profile preview; giữ project Expo, package Firebase và cấu hình ký hiện có.
 - Thay cấu hình Firebase/native: build và cài APK mới.
-- Đổi thùng: cập nhật ID/topic trên app/backend nếu đổi thiết bị; nhập lại chiều cao trong app, không sửa code tính phần trăm.
+- Thêm thiết bị mới: dùng đúng thông tin kết nối của thiết bị và thiết lập chiều cao một lần nếu chưa có. Thiết bị đã cấu hình không cho sửa chiều cao trong app.
 - Clone sang máy mới: cài dependencies, tự tạo lại `.env` từ mẫu và lấy các file riêng của project từ nơi bạn lưu. EAS vẫn dùng cấu hình ký và FCM đã lưu trên tài khoản Expo.
 - Người khác dùng Firebase/Expo riêng: làm lại phần tạo project và các biến môi trường cho project của họ, không dùng ID của người phát triển repo.
 

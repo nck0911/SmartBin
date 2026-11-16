@@ -10,6 +10,7 @@ export function parseHeight(text: string): number | null {
 export function heightCommand(requestId: string, mm: number, reading: Reading | undefined, now: number) {
   const data = reading?.data;
   if (!data?.settings_session) throw new Error('Thiết bị cần cập nhật firmware để thiết lập chiều cao.');
+  if (data.configured) throw new Error('Thùng đã được thiết lập chiều cao. Không thể thiết lập lại.');
   if (!reading?.liveAt || now - reading.liveAt > 15000 || reading.availability === 'offline' || reading.receivedAt === undefined) {
     throw new Error('Chờ thiết bị cập nhật dữ liệu rồi thử lại.');
   }
@@ -19,6 +20,7 @@ export function heightCommand(requestId: string, mm: number, reading: Reading | 
 }
 
 const errorText: Record<string, string> = {
+  already_configured: 'Thùng đã được thiết lập chiều cao. Không thể thiết lập lại.',
   storage: 'Thiết bị không lưu được thiết lập. Vui lòng thử lại.',
   invalid_height: 'Chiều cao không được thiết bị chấp nhận.',
   expired: 'Yêu cầu đã hết hạn. Chờ dữ liệu mới rồi thử lại.',

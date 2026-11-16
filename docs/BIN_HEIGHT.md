@@ -9,6 +9,10 @@
 <a id="calculation"></a>
 ## Quy ước lắp đặt và tính mức đầy
 
+Chiều cao chỉ được thiết lập **một lần cho mỗi thiết bị**. App chỉ hiện phần nhập khi thiết bị xác nhận chưa có chiều cao. Khi đã có cấu hình sẵn hoặc đã lưu thành công, phần thiết lập được ẩn; khởi động lại hay dùng điện thoại khác không mở lại quyền sửa. Trước khi lưu, hộp thoại ghi rõ số đo và yêu cầu xác nhận vì người dùng không thể chỉnh lại trong app.
+
+Hiện app dùng trạng thái `configured` từ thiết bị để xác định đã thiết lập hay chưa; luồng quét QR chưa được triển khai. Thiết bị đã có chiều cao sẽ không yêu cầu nhập thêm.
+
 Cảm biến đặt ở mặt dưới nắp, hướng xuống đáy. Người dùng nhập chiều cao bên trong, đo từ mặt dưới nắp đóng đến đáy. Phần firmware có `sensorOffsetCm` để bù độ nhô của mặt cảm biến so với mặt dưới nắp; mặc định 0 giả định lắp phẳng. Khi làm giá đỡ thật, đo độ nhô và đặt giá trị cố định cho mẫu giá đỡ, không bắt người dùng tự nhập độ lệch này.
 
 ```text
@@ -16,7 +20,7 @@ empty_distance = height_cm - sensorOffsetCm
 fill_percent = clamp(100 × (empty_distance - measured_distance) / (empty_distance - 5), 0, 100)
 ```
 
-Chiều cao nhập 10–400 cm, độ phân giải 0,1 cm. Mốc đầy 5 cm; cảnh báo đầy bật ≥80%, tắt ≤75%. Thiết bị chưa cấu hình gửi phần trăm null và full=false, nhưng vẫn điều khiển nắp và đo khí. Đổi chiều cao làm vô hiệu mẫu rác cũ; chỉ tính lại sau đóng ổn định và lượt đo mới. Cấu hình lỗi không thay thế cấu hình đang hoạt động.
+Chiều cao nhập 10–400 cm, độ phân giải 0,1 cm. Mốc đầy 5 cm; cảnh báo đầy bật ≥80%, tắt ≤75%. Thiết bị chưa cấu hình gửi phần trăm null và full=false, nhưng vẫn điều khiển nắp và đo khí. Sau lần thiết lập đầu, chờ nắp đóng ổn định và lượt đo mới để tính phần trăm. Firmware từ chối các lần thiết lập tiếp theo bằng `already_configured`, kể cả sau khởi động lại.
 
 <a id="mqtt"></a>
 ## Luồng MQTT
@@ -41,7 +45,7 @@ Kết quả:
 {"device_id":"device-a","request_id":"app_request","ok":true,"height_mm":450,"error":""}
 ```
 
-Các mã lỗi: `expired`, `invalid_height`, `busy`, `storage`. Payload không phân tích được bị bỏ qua. Cùng một request ID gần nhất không được thực thi lại. Chỉ xử lý một yêu cầu đang chờ vòng điều khiển áp dụng.
+Các mã lỗi: `expired`, `invalid_height`, `busy`, `storage`, `already_configured`. Payload không phân tích được bị bỏ qua. Cùng một request ID gần nhất không được thực thi lại. Chỉ xử lý một yêu cầu đang chờ vòng điều khiển áp dụng.
 
 State/events vẫn dùng schema 1, bổ sung `configured`, `bin_height_cm` (null nếu chưa thiết lập), `settings_session`. Giá trị height được phát từ snapshot đã áp dụng; không phát mẫu có chiều cao khác cấu hình đã lưu. App cũ không thể gửi thiết lập; app mới vẫn decode schema cũ nhưng ẩn phần trăm dựa trên chiều cao cố định trước đây.
 
@@ -54,13 +58,16 @@ State/events vẫn dùng schema 1, bổ sung `configured`, `bin_height_cm` (null
 | H02 | Nhập 45 cm, lưu khi thiết bị online | Pending → ACK → thành công, state có chiều cao 45 |
 | H03 | Nắp đóng, đo 45/25/13/5 cm | Khoảng 0/50/80/100%, báo đầy từ 80% |
 | H04 | Đang báo đầy, tăng khoảng cách tới 15 cm với chiều cao 45 cm | Cảnh báo đầy được xóa ở 75% |
-| H05 | Đổi 45 sang 100 cm | Chờ phép đo mới, không hiển thị phần trăm theo mẫu cũ |
+| H05 | Thùng đã có 45 cm; mở lại app hoặc gửi yêu cầu 100 cm | Không hiện nhập chiều cao; thiết bị từ chối yêu cầu mới, vẫn giữ 45 cm |
 | H06 | Khởi động lại ESP32 thật | Chiều cao vẫn được đọc từ NVS |
 | H07 | Nhập rỗng, chữ, 5, 400.1 hoặc nhiều hơn 1 chữ số thập phân | Lỗi ngay cạnh biểu mẫu, không gửi lệnh |
 | H08 | Ngắt kết nối hoặc chặn result khi đang lưu | Không báo thành công giả; mở lại/chờ state để kiểm tra |
 | H09 | Gửi lệnh sai phiên, hết hạn, hoặc chiều cao ngoài miền | Không đổi chiều cao hiện hành |
-| H10 | Demo, đổi chiều cao rồi tắt demo | Chỉ đổi dữ liệu minh họa, không publish thiết lập thật |
+| H10 | Xem thùng minh họa đã có chiều cao | Không hiện phần thiết lập, không gửi lệnh tới thiết bị thật |
 | H11 | Firmware cũ hoặc chỉ có state retained | Không cho lưu dựa trên dữ liệu không hỗ trợ/cũ |
 | H12 | Chuyển app xuống nền trong lúc chờ | Kết thúc chờ, quay lại phải chờ dữ liệu mới và kiểm tra chiều cao |
+| H13 | Nhập 45 cm rồi chọn Lưu thiết lập | Dialog nêu rõ 45 cm và chỉ thiết lập một lần; chưa gửi lệnh trước khi xác nhận |
+| H14 | Chọn Kiểm tra lại trong dialog | Trở về biểu mẫu, thiết bị chưa thay đổi |
+| H15 | Hai điện thoại cùng thiết lập một thùng chưa cấu hình | Chỉ yêu cầu đầu lưu thành công; yêu cầu sau bị từ chối |
 
 Ghi nhận kết quả khi chạy từng ca trên mô phỏng hoặc thiết bị.

@@ -44,6 +44,7 @@ void onMessage(char* topic, uint8_t* payload, unsigned int length) {
   // Do not apply a duplicate of the most recently accepted request.
   if (strcmp(lastRequestId, request.id) == 0) return;
   if (settingsPending) { publishResult(request, "busy"); return; }
+  if (BinSettings::validHeight(storedHeight)) { publishResult(request, "already_configured"); return; }
   if (storedHeight != request.heightMm) {
     Preferences preferences;
     if (!preferences.begin("trash-bin", false)) {

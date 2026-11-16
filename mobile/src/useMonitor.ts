@@ -90,6 +90,7 @@ export function useMonitor() {
     return () => { clientRef.current = null; tracker.cancelAll(); client.removeAllListeners(); client.end(true); };
   }, [scope]);
   async function saveHeight(bin: Bin, mm: number) {
+    if (readings[bin.id]?.data?.configured) throw new Error('Thùng đã được thiết lập chiều cao. Không thể thiết lập lại.');
     if (!Number.isInteger(mm) || mm < 100 || mm > 4000) throw new Error('Nhập chiều cao từ 10 đến 400 cm.');
     if (demo) { setDemoHeights(old => ({ ...old, [bin.id]: mm })); return; }
     const client = clientRef.current;

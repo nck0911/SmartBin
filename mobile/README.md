@@ -53,7 +53,7 @@ Bật **Chế độ minh họa** để trải nghiệm mà không cần ESP32. N
 2. Tắt chế độ minh họa trong app.
 3. Chọn broker WebSocket tương ứng; mặc định là `wss://broker.hivemq.com:8884/mqtt`.
 4. Thêm thùng với device ID và topic root khớp cấu hình firmware.
-5. Mở chi tiết → **Thiết lập**, nhập chiều cao bên trong thùng và chờ thiết bị xác nhận.
+5. Nếu thùng chưa có chiều cao, mở chi tiết → **Thiết lập**, nhập số đo, xác nhận thiết lập một lần và chờ thiết bị phản hồi. Thùng đã cấu hình không hiện phần nhập chiều cao.
 
 App nhận trạng thái để theo dõi; firmware tự điều khiển nắp. Xem [cách tính mức đầy](../docs/BIN_HEIGHT.md).
 

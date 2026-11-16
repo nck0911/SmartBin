@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Bin, Reading } from './model';
 import { parseHeight } from './heightSettings';
+import { ConfirmationDialog } from './components/ConfirmationDialog';
 
 type Props = { bin: Bin; reading?: Reading; demo: boolean; connected: boolean; now: number; saveHeight: (bin: Bin, mm: number) => Promise<void> };
 
@@ -13,21 +14,32 @@ export function BinHeightSettings({ bin, reading, demo, connected, now, saveHeig
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [saved, setSaved] = useState(false);
+  const [confirmationMm, setConfirmationMm] = useState<number | null>(null);
+  const saving = useRef(false);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const data = reading?.data;
   const supported = !!data?.settings_session;
   const live = connected && !!reading?.liveAt && now - reading.liveAt <= 15000 && reading.availability !== 'offline';
-  const unavailable = !demo && (!supported || !live);
+  const locked = saved || data?.configured === true;
+  const unavailable = locked || (!demo && (!supported || !live));
+  const needsSetup = data?.configured === false && supported && !saved;
 
   function show() {
+    if (!needsSetup) return;
     setHeight(data?.bin_height_cm?.toString() ?? '');
     setError(''); setSuccess(''); setSaved(false); setOpen(true);
   }
-  async function submit() {
-    if (pending || unavailable) return;
+  function submit() {
+    if (pending || unavailable || confirmationMm !== null) return;
     const mm = parseHeight(height);
     if (mm === null) { setError('Nhập chiều cao từ 10 đến 400 cm, tối đa 1 chữ số thập phân.'); return; }
+    Keyboard.dismiss();
+    setConfirmationMm(mm);
+  }
+  async function persist(mm: number) {
+    if (saving.current || unavailable) return;
+    saving.current = true;
     setPending(true); setError(''); setSuccess('');
     try {
       await saveHeight(bin, mm);
@@ -37,22 +49,23 @@ export function BinHeightSettings({ bin, reading, demo, connected, now, saveHeig
       }
     } catch (reason) {
       if (mounted.current) setError(reason instanceof Error ? reason.message : 'Chưa lưu được thiết lập. Vui lòng thử lại.');
-    } finally { if (mounted.current) setPending(false); }
+    } finally { saving.current = false; if (mounted.current) setPending(false); }
   }
+  if (!needsSetup && !open) return null;
   return <>
-    <View style={styles.card}>
+    {needsSetup && <View style={styles.card}>
       <Text style={styles.heading}>Thiết lập thùng</Text>
-      <Text style={styles.body}>{data?.configured ? `Chiều cao bên trong: ${data.bin_height_cm} cm` : 'Nhập chiều cao thùng để xem mức đầy.'}</Text>
-      <Pressable accessibilityRole="button" onPress={show} style={styles.button}><Text style={styles.buttonText}>{data?.configured ? 'Đổi chiều cao thùng' : 'Thiết lập'}</Text></Pressable>
-    </View>
-    <Modal visible={open} animationType="slide" onRequestClose={() => { if (!pending) setOpen(false); }}>
+      <Text style={styles.body}>Nhập chiều cao thùng để xem mức đầy. Bạn chỉ cần thiết lập một lần.</Text>
+      <Pressable accessibilityRole="button" onPress={show} style={styles.button}><Text style={styles.buttonText}>Thiết lập</Text></Pressable>
+    </View>}
+    <Modal visible={open} animationType="slide" onRequestClose={() => { if (confirmationMm !== null) setConfirmationMm(null); else if (!pending) setOpen(false); }}>
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.page}>
             <Text style={styles.title}>Thiết lập thùng</Text>
             <Text style={styles.body}>{bin.name}{demo ? ' · Chế độ minh họa' : ''}</Text>
             <Text style={styles.label}>Chiều cao bên trong thùng (cm)</Text>
-            <TextInput accessibilityLabel="Chiều cao bên trong thùng, đơn vị cm" placeholder="Ví dụ: 45" placeholderTextColor="#53685F" keyboardType="decimal-pad" value={height} editable={!pending} onChangeText={value => { setHeight(value); setError(''); setSuccess(''); setSaved(false); }} style={styles.input}/>
+            <TextInput accessibilityLabel="Chiều cao bên trong thùng, đơn vị cm" placeholder="Ví dụ: 45" placeholderTextColor="#53685F" keyboardType="decimal-pad" value={height} editable={!pending && !locked} onChangeText={value => { setHeight(value); setError(''); setSuccess(''); setSaved(false); }} style={styles.input}/>
             <Text style={styles.body}>Đo từ mặt dưới nắp khi đóng đến đáy bên trong thùng.</Text>
             <View accessible accessibilityLabel="Minh họa: cảm biến gắn dưới nắp, hướng xuống đáy; chiều cao đo từ mặt dưới nắp đóng đến đáy bên trong thùng." style={styles.diagram}>
               <View style={styles.lid}/>
@@ -60,15 +73,34 @@ export function BinHeightSettings({ bin, reading, demo, connected, now, saveHeig
               <View style={styles.bin}><Text style={styles.arrow}>↕</Text><Text style={styles.diagramLabel}>Chiều cao bên trong</Text></View>
               <Text style={styles.note}>Cảm biến dưới nắp · Hướng xuống đáy</Text>
             </View>
-            <Text style={styles.note}>Chỉ cần nhập lại khi chuyển sang thùng khác. Thiết lập được lưu trên thiết bị.</Text>
-            {unavailable && <Text style={styles.warning}>{!data ? 'Chờ thiết bị gửi dữ liệu để lưu thiết lập.' : !supported ? 'Cập nhật firmware của thiết bị để sử dụng thiết lập chiều cao.' : 'Thiết bị chưa cập nhật dữ liệu. Kiểm tra kết nối rồi thử lại.'}</Text>}
+            <Text style={styles.note}>Chiều cao chỉ được thiết lập một lần và lưu trên thiết bị. Hãy kiểm tra số đo trước khi lưu.</Text>
+            {locked && !saved && <Text style={styles.success}>Thùng đã có chiều cao {data?.bin_height_cm} cm. Không cần thiết lập lại.</Text>}
+            {unavailable && !locked && <Text style={styles.warning}>{!data ? 'Chờ thiết bị gửi dữ liệu để lưu thiết lập.' : !supported ? 'Cập nhật firmware của thiết bị để sử dụng thiết lập chiều cao.' : 'Thiết bị chưa cập nhật dữ liệu. Kiểm tra kết nối rồi thử lại.'}</Text>}
             {pending && <View accessibilityLiveRegion="polite" style={styles.wait}><ActivityIndicator/><Text style={styles.body}>Đang chờ thiết bị xác nhận…</Text></View>}
             {!!error && <Text accessibilityRole="alert" style={styles.warning}>{error}</Text>}
             {!!success && <Text accessibilityLiveRegion="polite" style={styles.success}>{success}</Text>}
-            {!saved && <Pressable accessibilityRole="button" accessibilityState={{ disabled: pending || unavailable, busy: pending }} disabled={pending || unavailable} onPress={submit} style={[styles.button, (pending || unavailable) && styles.disabled]}><Text style={styles.buttonText}>{pending ? 'Đang lưu…' : 'Lưu thiết lập'}</Text></Pressable>}
-            <Pressable accessibilityRole="button" accessibilityState={{ disabled: pending }} disabled={pending} onPress={() => setOpen(false)} style={[styles.secondary, pending && styles.disabled]}><Text style={styles.label}>{saved ? 'Hoàn tất' : 'Quay lại'}</Text></Pressable>
+            {!locked && <Pressable accessibilityRole="button" accessibilityState={{ disabled: pending || unavailable, busy: pending }} disabled={pending || unavailable} onPress={submit} style={[styles.button, (pending || unavailable) && styles.disabled]}><Text style={styles.buttonText}>{pending ? 'Đang lưu…' : 'Lưu thiết lập'}</Text></Pressable>}
+            <Pressable accessibilityRole="button" accessibilityState={{ disabled: pending }} disabled={pending} onPress={() => setOpen(false)} style={[styles.secondary, pending && styles.disabled]}><Text style={styles.label}>{locked ? 'Hoàn tất' : 'Quay lại'}</Text></Pressable>
           </ScrollView>
         </KeyboardAvoidingView>
+        <ConfirmationDialog
+          visible={confirmationMm !== null}
+          title="Xác nhận chiều cao thùng"
+          description="Bạn chỉ có thể thiết lập một lần và không thể sửa chiều cao trong ứng dụng sau khi lưu. Hãy kiểm tra lại số đo trước khi xác nhận."
+          details={[
+            { label: 'Thùng rác', value: bin.name },
+            { label: 'Chiều cao bên trong', value: `${(confirmationMm ?? 0) / 10} cm` },
+          ]}
+          cancelLabel="Kiểm tra lại"
+          confirmLabel="Xác nhận lưu"
+          confirmDisabled={unavailable || pending}
+          onCancel={() => setConfirmationMm(null)}
+          onConfirm={() => {
+            const mm = confirmationMm;
+            setConfirmationMm(null);
+            if (mm !== null) void persist(mm);
+          }}
+        />
       </SafeAreaView>
     </Modal>
   </>;
