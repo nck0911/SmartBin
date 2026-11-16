@@ -6,3 +6,24 @@ build-tests/
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+# Private environment files anywhere in the repository; templates are public.
+.env
+.env.*
+!.env.example
+
+# Firebase configuration/credentials stay outside source control.
+google-services.json
+GoogleService-Info.plist
+*service-account*.json
+*firebase-adminsdk*.json
+
+# Signing material and local credentials.
+*.jks
+*.keystore
+*.p12
+*.p8
+*.pem
+*.key
+credentials.json
+.credentials/

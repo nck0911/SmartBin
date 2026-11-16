@@ -1,5 +1,12 @@
 # Thiết lập chiều cao thùng
 
+## Mục lục
+
+- [Quy ước lắp đặt và tính mức đầy](#calculation)
+- [Luồng MQTT](#mqtt)
+- [Kiểm tra thủ công](#checks)
+
+<a id="calculation"></a>
 ## Quy ước lắp đặt và tính mức đầy
 
 Cảm biến đặt ở mặt dưới nắp, hướng xuống đáy. Người dùng nhập chiều cao bên trong, đo từ mặt dưới nắp đóng đến đáy. Phần firmware có `sensorOffsetCm` để bù độ nhô của mặt cảm biến so với mặt dưới nắp; mặc định 0 giả định lắp phẳng. Khi làm giá đỡ thật, đo độ nhô và đặt giá trị cố định cho mẫu giá đỡ, không bắt người dùng tự nhập độ lệch này.
@@ -11,6 +18,7 @@ fill_percent = clamp(100 × (empty_distance - measured_distance) / (empty_distan
 
 Chiều cao nhập 10–400 cm, độ phân giải 0,1 cm. Mốc đầy 5 cm; cảnh báo đầy bật ≥80%, tắt ≤75%. Thiết bị chưa cấu hình gửi phần trăm null và full=false, nhưng vẫn điều khiển nắp và đo khí. Đổi chiều cao làm vô hiệu mẫu rác cũ; chỉ tính lại sau đóng ổn định và lượt đo mới. Cấu hình lỗi không thay thế cấu hình đang hoạt động.
 
+<a id="mqtt"></a>
 ## Luồng MQTT
 
 1. App chờ bản tin mới từ thiết bị, không dùng retained-only hoặc dữ liệu quá 15 giây để gửi thiết lập.
@@ -25,7 +33,7 @@ Payload lệnh có dạng ASCII giới hạn độ dài, đơn vị chiều cao 
 request_id:settings_session:deadline_uptime_ms:height_mm
 ```
 
-`request_id` gồm 1–48 ký tự chữ/số/`_`/`-`. `settings_session` là số uint32 khác 0 được firmware tạo mỗi lần khởi động. Deadline là uptime của thiết bị được app ước tính từ bản tin mới cộng 15 giây, theo modulo uint32. Firmware chỉ nhận yêu cầu còn hạn tối đa 20 giây và đúng phiên; mẫu phiên cũ hoặc yêu cầu hết hạn không được áp dụng. Đây là cơ chế hạn chế lệnh cũ, không thay thế xác thực/ACL broker.
+`request_id` gồm 1–48 ký tự chữ/số/`_`/`-`. `settings_session` là số uint32 khác 0 được firmware tạo mỗi lần khởi động. Deadline là uptime của thiết bị được app ước tính từ bản tin mới cộng 15 giây, theo modulo uint32. Firmware chỉ nhận yêu cầu còn hạn tối đa 20 giây và đúng phiên; mẫu phiên cũ hoặc yêu cầu hết hạn không được áp dụng.
 
 Kết quả:
 
@@ -37,7 +45,8 @@ Các mã lỗi: `expired`, `invalid_height`, `busy`, `storage`. Payload không p
 
 State/events vẫn dùng schema 1, bổ sung `configured`, `bin_height_cm` (null nếu chưa thiết lập), `settings_session`. Giá trị height được phát từ snapshot đã áp dụng; không phát mẫu có chiều cao khác cấu hình đã lưu. App cũ không thể gửi thiết lập; app mới vẫn decode schema cũ nhưng ẩn phần trăm dựa trên chiều cao cố định trước đây.
 
-## Kiểm tra thủ công cần thực hiện
+<a id="checks"></a>
+## Kiểm tra thủ công
 
 | Ca | Thao tác | Kết quả mong đợi |
 | --- | --- | --- |
@@ -54,4 +63,4 @@ State/events vẫn dùng schema 1, bổ sung `configured`, `bin_height_cm` (null
 | H11 | Firmware cũ hoặc chỉ có state retained | Không cho lưu dựa trên dữ liệu không hỗ trợ/cũ |
 | H12 | Chuyển app xuống nền trong lúc chờ | Kết thúc chờ, quay lại phải chờ dữ liệu mới và kiểm tra chiều cao |
 
-Các ca trên là checklist runtime, chưa được đánh dấu pass bằng build hay unit test.
+Ghi nhận kết quả khi chạy từng ca trên mô phỏng hoặc thiết bị.

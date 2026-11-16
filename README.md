@@ -16,6 +16,7 @@ Dự án sử dụng Wokwi để mô phỏng thiết bị, giúp tìm hiểu cá
 - [Mô phỏng mùi và cảm biến thực tế](#odor-simulation)
 - [Cấu trúc dự án](#structure)
 - [Hướng dẫn chạy](#getting-started)
+- [Cấu hình toàn bộ dự án](docs/SETUP.md)
 - [Trải nghiệm demo](#demo)
 - [Thông báo trên điện thoại](#notifications)
 - [Kiểm thử](#testing)
@@ -158,6 +159,8 @@ Khi chuyển sang phần cứng thật, cần thiết kế nguồn gia nhiệt/m
 <a id="getting-started"></a>
 ## 🚀 Hướng dẫn chạy
 
+Nếu vừa clone repo hoặc cần thiết lập Firebase, Expo, APK và backend, làm theo [hướng dẫn cấu hình toàn bộ dự án](docs/SETUP.md).
+
 ### 1. Chạy firmware trong Wokwi
 
 Chuẩn bị **VS Code**, extension **PlatformIO IDE** và **Wokwi Simulator**. Mở thư mục gốc dự án, sau đó chạy trong PlatformIO terminal:
@@ -166,11 +169,13 @@ Chuẩn bị **VS Code**, extension **PlatformIO IDE** và **Wokwi Simulator**. 
 pio run
 ```
 
+Cấu hình mô phỏng mặc định có sẵn trong `include/Secrets.example.h`. Khi dùng Wi-Fi hoặc broker riêng, sao chép file này thành `include/Secrets.h` và điền cấu hình trên máy. Đặt device ID/topic tương ứng trong app khi thêm thùng.
+
 Sau khi build thành công, mở Command Palette và chọn **Wokwi: Start Simulator**. Quan sát mô phỏng và Serial Monitor để theo dõi hoạt động của nắp, cảm biến và cảnh báo.
 
 ### 2. Chạy ứng dụng mobile
 
-Chuẩn bị **Node.js** tương thích với Expo SDK của dự án. Từ thư mục gốc:
+Chuẩn bị **Node.js 22.13 trở lên** tương thích với Expo SDK của dự án. Từ thư mục gốc:
 
 ```sh
 cd mobile
@@ -188,7 +193,7 @@ Các lựa chọn khác, chạy trong thư mục `mobile/`:
 | iOS simulator trên macOS có Xcode | `npm run ios` |
 | Trình duyệt | `npm run web` |
 
-Nhấn `Ctrl+C` để dừng. Hướng dẫn mobile chi tiết nằm trong [mobile/README.md](mobile/README.md).
+Chạy `npm ci` lần đầu hoặc khi dependencies thay đổi. Nhấn `Ctrl+C` để dừng. Hướng dẫn thiết lập trên máy mới và build APK nằm trong [mobile/README.md](mobile/README.md); backend có [hướng dẫn chạy riêng](backend/README.md).
 
 <a id="demo"></a>
 ## 🎮 Trải nghiệm demo
@@ -215,7 +220,7 @@ Trong app, mở **Thông báo → Thiết lập thông báo** để bật nhận
 - **Khi đang mở app:** ứng dụng tạo thông báo khi đang nhận dữ liệu; có nút gửi thông báo thử.
 - **Kể cả khi đóng app:** dịch vụ theo dõi MQTT độc lập gửi push qua Expo tới điện thoại. Cần bản ứng dụng cài riêng và hoàn tất thiết lập dịch vụ; Expo Go không cung cấp remote push Android.
 
-Luồng phần mềm đã có trong repository; việc nhận push thật cần cấu hình tài khoản và kiểm chứng trên thiết bị. Xem [hướng dẫn thông báo](docs/NOTIFICATIONS.md) và [dịch vụ theo dõi](backend/README.md).
+Thiết lập và kiểm tra nhận thông báo trên thiết bị theo [hướng dẫn thông báo](docs/NOTIFICATIONS.md) và [dịch vụ theo dõi](backend/README.md).
 
 <a id="testing"></a>
 ## 🧪 Kiểm thử

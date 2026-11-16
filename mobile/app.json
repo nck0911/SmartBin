@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Smart Trash",
-    "slug": "smart-trash-mobile",
+    "slug": "smart-trash",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
