@@ -5,6 +5,7 @@
 - [Kiểm tra tự động](#automated)
 - [Tương tác Wokwi](#wokwi)
 - [Thông báo mobile](#notifications)
+- [Điều hướng mobile](#navigation)
 
 <a id="automated"></a>
 ## Kiểm tra tự động
@@ -50,3 +51,17 @@ Ghi lại kết quả thực tế, ảnh hoặc log cho từng lần chạy. Ki�
 ## Thông báo mobile
 
 Theo [hướng dẫn thông báo](NOTIFICATIONS.md#verify), thử cả khi app mở và khi dùng APK ở nền. Kiểm thử tự động giả lập nhà cung cấp push; cần điện thoại để kiểm tra thông báo thực tế.
+
+
+<a id="navigation"></a>
+## Điều hướng mobile
+
+| Ca | Thao tác | Kết quả mong đợi |
+| --- | --- | --- |
+| N01 | Tìm kiếm/lọc danh sách → mở thùng → Back | Trở về danh sách, giữ tìm kiếm và bộ lọc |
+| N02 | Chi tiết → mở sửa thông tin/thiết lập → Back | Đóng biểu mẫu, vẫn ở chi tiết; Back lần nữa mới quay về màn trước |
+| N03 | Đang xem thùng A → bấm thông báo mở thùng B → Back | Trở về chi tiết thùng A |
+| N04 | Mở chi tiết từ liên kết khi app chưa có lịch sử | Có màn danh sách làm điểm quay lại |
+| N05 | Đang ở danh sách gốc → Back Android | Theo hành vi hệ thống, không tự đẩy thêm màn danh sách |
+
+Chạy trên Android để kiểm tra cả nút Back của thiết bị và mũi tên trên thanh tiêu đề.

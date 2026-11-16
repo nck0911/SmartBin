@@ -11,6 +11,7 @@ Hướng dẫn từ bản clone mới, gồm các bước trên giao diện Expo
 - [Kết nối thùng rác](#connect)
 - [Build APK](#apk)
 - [Thông báo](#notifications)
+- [Điều hướng và nút Back](#navigation)
 - [Kiểm tra](#checks)
 
 <a id="install"></a>
@@ -84,6 +85,13 @@ Trong app, mở **Thông báo → Thiết lập thông báo**:
 
 - **Bật khi đang mở app:** nhận thông báo hệ thống khi app đang theo dõi dữ liệu; có nút gửi thông báo thử.
 - **Kể cả khi đóng app:** dùng APK và [backend](../backend/README.md) đang hoạt động. Nhập địa chỉ HTTPS của dịch vụ và mã kết nối được thiết lập trên backend.
+
+<a id="navigation"></a>
+## Điều hướng và nút Back
+
+Danh sách và chi tiết dùng lịch sử màn hình của Expo Router. Mũi tên trên thanh tiêu đề và nút Back của Android quay lại màn hình trước đó. Khi biểu mẫu hoặc thiết lập đang mở, Back đóng phần đó trước; trong lúc chờ lưu, thao tác đóng có thể tạm khóa để đợi kết quả.
+
+Sau khi cập nhật các thư viện điều hướng, dừng Metro và chạy `npm start -- --clear`. APK đã cài cần build lại để có thay đổi native.
 
 <a id="checks"></a>
 ## Kiểm tra
