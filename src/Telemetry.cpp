@@ -9,6 +9,7 @@
 #else
 #include "Secrets.example.h"
 #endif
+#include "SimulationConfig.h"
 namespace {
 QueueHandle_t snapshots;
 QueueHandle_t events;

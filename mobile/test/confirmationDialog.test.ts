@@ -78,6 +78,25 @@ test('a preset bin hides setup without hiding setup for another unconfigured bin
   assert.ok(runtime('../src/BinHeightSettings.tsx', 'BinHeightSettings').render({ ...input, bin: { ...props.bin, id: 'b' } }));
 });
 
+test('QR height prefills setup; confirmation sends the displayed measurement and never overwrites a configured bin', async () => {
+  const ui = runtime('../src/BinHeightSettings.tsx', 'BinHeightSettings');
+  const measurements: number[] = [];
+  const input = { ...props, bin: { ...props.bin, heightCm: 60 }, saveHeight: async (_bin: unknown, mm: number) => { measurements.push(mm); } };
+  let tree = ui.render(input);
+  button(tree, 'Thiết lập').props.onPress(); tree = ui.render(input);
+  assert.equal(nodes(tree).find(node => node.type === 'TextInput')!.props.value, '60');
+  assert.deepEqual(measurements, []);
+  button(tree, 'Lưu thiết lập').props.onPress(); tree = ui.render(input);
+  const dialog = nodes(tree).find(node => node.type === 'ConfirmationDialog')!;
+  assert.equal(dialog.props.details[1].value, '60 cm');
+  dialog.props.onConfirm();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.deepEqual(measurements, [600]);
+  const locked = runtime('../src/BinHeightSettings.tsx', 'BinHeightSettings');
+  assert.equal(locked.render({ ...input, reading: { ...props.reading, data: { configured: true, settings_session: 1, bin_height_cm: 45 } } }), null);
+  assert.deepEqual(measurements, [600]);
+});
+
 test('shared dialog routes Android Back to cancel and exposes a disabled confirmation', () => {
   const ui = runtime('../src/components/ConfirmationDialog.tsx', 'ConfirmationDialog');
   let cancelled = 0, confirmed = 0;

@@ -24,7 +24,15 @@
     "plugins": [
       "expo-secure-store",
       "expo-notifications",
-      "expo-router"
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Cho phép dùng camera để quét mã QR trên thùng rác.",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ]
     ],
     "scheme": "smart-trash"
   }

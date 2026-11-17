@@ -1,4 +1,7 @@
-export type Bin = { id: string; name: string; location: string; topic: string };
+export type Bin = { id: string; name: string; location: string; topic: string; heightCm?: number };
+export function validHeightCm(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 10 && value <= 400 && Math.round(value * 10) / 10 === value;
+}
 export type Telemetry = { schema: 1; device_id: string; fill_percent: number | null; gas_adc: number | null; trash_valid: boolean; trash_stale: boolean; gas_valid: boolean; full: boolean; gas_high: boolean; lid_command: 'open' | 'closed'; uptime_ms: number; configured?: boolean; bin_height_cm?: number | null; settings_session?: number };
 export type Reading = { data?: Telemetry; receivedAt?: number; liveAt?: number; availability?: string };
 export const initialBin: Bin = { id: 'nhom10-trash-7c91a2', name: 'Thùng rác', location: 'Phòng thực hành', topic: 'nhom10/trash/nhom10-trash-7c91a2' };
@@ -27,6 +30,7 @@ export function status(r: Reading | undefined, connected: boolean, now: number) 
   return 'Đang cập nhật';
 }
 export function validateBin(b: Bin, bins: Bin[], previousId?: string) {
+  if (b.heightCm !== undefined && !validHeightCm(b.heightCm)) return 'Chiều cao trong QR phải từ 10 đến 400 cm, tối đa 1 chữ số thập phân.';
   if (![b.id,b.name,b.location,b.topic].every(s => s.trim())) return 'Vui lòng điền đủ các trường.';
   if (/[+#\s]/.test(b.topic) || b.topic.startsWith('/') || b.topic.endsWith('/')) return 'Đường dẫn dữ liệu không chứa khoảng trắng, +, # hoặc dấu / ở đầu/cuối.';
   if (bins.some(x => x.id !== previousId && (x.id === b.id || x.topic === b.topic))) return 'Mã thiết bị hoặc đường dẫn dữ liệu đã có trong danh sách.';

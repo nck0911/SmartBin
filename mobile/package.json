@@ -5,6 +5,7 @@
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~58.0.23",
+    "expo-camera": "~58.0.14",
     "expo-constants": "~58.0.16",
     "expo-linking": "~58.0.17",
     "expo-notifications": "~58.1.9",
@@ -32,7 +33,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint App.tsx index.ts src test",
-    "test": "node --experimental-strip-types --test test/model.test.ts test/heightSettings.test.ts test/notifications.test.ts test/notificationDevice.test.ts test/confirmationDialog.test.ts"
+    "test": "node --experimental-strip-types --test test/model.test.ts test/heightSettings.test.ts test/notifications.test.ts test/notificationDevice.test.ts test/confirmationDialog.test.ts test/binQr.test.ts"
   },
   "private": true
 }

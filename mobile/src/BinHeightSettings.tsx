@@ -27,7 +27,7 @@ export function BinHeightSettings({ bin, reading, demo, connected, now, saveHeig
 
   function show() {
     if (!needsSetup) return;
-    setHeight(data?.bin_height_cm?.toString() ?? '');
+    setHeight(data?.bin_height_cm?.toString() ?? bin.heightCm?.toString() ?? '');
     setError(''); setSuccess(''); setSaved(false); setOpen(true);
   }
   function submit() {
@@ -56,6 +56,7 @@ export function BinHeightSettings({ bin, reading, demo, connected, now, saveHeig
     {needsSetup && <View style={styles.card}>
       <Text style={styles.heading}>Thiết lập thùng</Text>
       <Text style={styles.body}>Nhập chiều cao thùng để xem mức đầy. Bạn chỉ cần thiết lập một lần.</Text>
+      {bin.heightCm !== undefined && <Text style={styles.body}>Chiều cao từ QR: {bin.heightCm} cm. Kiểm tra số đo trước khi xác nhận lưu trên thiết bị.</Text>}
       <Pressable accessibilityRole="button" onPress={show} style={styles.button}><Text style={styles.buttonText}>Thiết lập</Text></Pressable>
     </View>}
     <Modal visible={open} animationType="slide" onRequestClose={() => { if (confirmationMm !== null) setConfirmationMm(null); else if (!pending) setOpen(false); }}>

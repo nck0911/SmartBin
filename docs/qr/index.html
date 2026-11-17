@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mã QR · 3 thùng rác mô phỏng</title>
+<style>
+  body { margin: 24px; font: 16px/1.5 system-ui, sans-serif; color: #183b30; background: #f3f6f3; }
+  main { max-width: 1080px; margin: auto; }
+  .bins { display: flex; flex-wrap: wrap; gap: 24px; }
+  article { padding: 24px; background: white; border: 1px solid #d8e2db; border-radius: 16px; flex: 1 1 240px; text-align: center; }
+  img { display: block; width: 100%; max-width: 300px; height: auto; margin: auto; }
+  code { overflow-wrap: anywhere; font-size: 13px; }
+  a { color: #166447; }
+  @media print { body { background: white; margin: 0; } article { break-inside: avoid; } img { width: 60mm; } }
+</style>
+<main>
+  <h1>QR cho 3 thùng mô phỏng</h1>
+  <p>Mở app → Quét QR → Lưu thay đổi → mở chi tiết thùng → Thiết lập → xác nhận chiều cao. QR dùng lại sau mỗi lần đóng/mở mô phỏng.</p>
+  <div class="bins">
+    <article><h2>Thùng 1 · 45 cm</h2><a href="bin-1.svg"><img src="bin-1.svg" alt="Mã QR thùng 1, chiều cao 45 cm"></a><code>nhom10-trash-7c91a2</code><p>Khu A · Rác ít, mùi thấp</p></article>
+    <article><h2>Thùng 2 · 60 cm</h2><a href="bin-2.svg"><img src="bin-2.svg" alt="Mã QR thùng 2, chiều cao 60 cm"></a><code>nhom10-trash-7c91a2-02</code><p>Khu B · Gần đầy, mùi thấp</p></article>
+    <article><h2>Thùng 3 · 80 cm</h2><a href="bin-3.svg"><img src="bin-3.svg" alt="Mã QR thùng 3, chiều cao 80 cm"></a><code>nhom10-trash-7c91a2-03</code><p>Khu C · Rác vừa, mùi cao</p></article>
+  </div>
+  <p>In mã trên nền trắng, giữ nguyên viền trắng. Chiều cao trên QR là số đo mẫu; thiết bị chỉ lưu sau khi bạn xác nhận. <a href="../SIMULATIONS.md">Hướng dẫn chạy mô phỏng</a>.</p>
+</main>
+</html>

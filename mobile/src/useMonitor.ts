@@ -3,11 +3,11 @@ import type { SetStateAction } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import mqtt from 'mqtt';
 import { AppState } from 'react-native';
-import { Bin, Reading, decode, initialBin } from './model';
+import { Bin, Reading, decode, initialBin, validHeightCm } from './model';
 import { HeightRequests, heightCommand } from './heightSettings';
 
 export function useMonitor() {
-  const [bins, setBins] = useState<Bin[]>([initialBin]);
+  const [bins, setBins] = useState<Bin[]>([]);
   const [broker, setBroker] = useState('wss://broker.hivemq.com:8884/mqtt');
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
@@ -27,7 +27,14 @@ export function useMonitor() {
       if (!raw) return;
       const saved = JSON.parse(raw);
       if (Array.isArray(saved.bins) && saved.bins.every((b: Bin) => b && ['id','name','location','topic'].every(k => typeof (b as any)[k] === 'string')) && typeof saved.broker === 'string' && /^wss:\/\//.test(saved.broker)) {
-        setBins(saved.bins.map((b: Bin) => b.id === initialBin.id && b.name === 'Thùng rác nhóm 10' ? { ...b, name: initialBin.name } : b)); setBroker(saved.broker);
+        // Remove only the untouched legacy sample once; preserve manually named bins.
+        setBins(saved.bins.filter((b: Bin) => saved.onboardingVersion === 2 ||
+          !(b.id === initialBin.id && b.topic === initialBin.topic && b.location === initialBin.location &&
+            [initialBin.name, 'Thùng rác nhóm 10'].includes(b.name))).map((b: Bin) => {
+              const { heightCm, ...base } = b;
+              return validHeightCm(heightCm) ? { ...base, heightCm } : base;
+            }));
+        setBroker(saved.broker);
       }
     }).catch(() => setError('Không đọc được cấu hình đã lưu.')).finally(() => setReady(true));
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -35,7 +42,7 @@ export function useMonitor() {
     return () => { clearInterval(timer); sub.remove(); };
   }, []);
   useEffect(() => {
-    if (ready) AsyncStorage.setItem('trash-monitor-v1', JSON.stringify({ bins, broker })).catch(() => setError('Không lưu được cấu hình.'));
+    if (ready) AsyncStorage.setItem('trash-monitor-v1', JSON.stringify({ bins, broker, onboardingVersion: 2 })).catch(() => setError('Không lưu được cấu hình.'));
   }, [ready, bins, broker]);
   useEffect(() => {
     const { ready, active, demo, bins, broker, demoHeights } = scope;
