@@ -1,8 +1,8 @@
-# 🗑️ Smart Trash Can
+# 🗑️ SmartBin
 
 **Thùng rác thông minh với ESP32 và ứng dụng theo dõi trên điện thoại.**
 
-Smart Trash Can kết hợp điều khiển nắp không tiếp xúc, theo dõi mức đầy và cảnh báo mùi hôi trong một hệ thống IoT. Thiết bị gửi dữ liệu qua MQTT để người dùng quan sát trạng thái và quản lý danh sách thùng rác bằng ứng dụng React Native.
+SmartBin kết hợp điều khiển nắp không tiếp xúc, theo dõi mức đầy và cảnh báo mùi hôi trong một hệ thống IoT. Thiết bị gửi dữ liệu qua MQTT để người dùng quan sát trạng thái và quản lý danh sách thùng rác bằng ứng dụng React Native.
 
 Dự án sử dụng Wokwi để mô phỏng thiết bị, giúp tìm hiểu cách cảm biến, bộ điều khiển và ứng dụng phối hợp trong quy trình theo dõi và thu gom rác.
 

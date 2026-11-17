@@ -4,7 +4,7 @@ export function validHeightCm(value: unknown): value is number {
 }
 export type Telemetry = { schema: 1; device_id: string; fill_percent: number | null; gas_adc: number | null; trash_valid: boolean; trash_stale: boolean; gas_valid: boolean; full: boolean; gas_high: boolean; lid_command: 'open' | 'closed'; uptime_ms: number; configured?: boolean; bin_height_cm?: number | null; settings_session?: number };
 export type Reading = { data?: Telemetry; receivedAt?: number; liveAt?: number; availability?: string };
-export const initialBin: Bin = { id: 'nhom10-trash-7c91a2', name: 'Thùng rác', location: 'Phòng thực hành', topic: 'nhom10/trash/nhom10-trash-7c91a2' };
+export const initialBin: Bin = { id: 'smartbin-7c91a2-01', name: 'Thùng rác', location: 'Phòng thực hành', topic: 'smartbin/bins/smartbin-7c91a2-01' };
 export function decode(raw: string, id: string): Telemetry | null {
   try {
     const d = JSON.parse(raw);

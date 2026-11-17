@@ -1,13 +1,13 @@
 # Chạy đồng thời 3 thùng rác
 
 Ba thùng dùng chung code cảm biến và MQTT; mỗi firmware có mã thiết bị và topic riêng.
-Thùng 1 giữ mã hiện tại để app và QR cũ vẫn nhận đúng thiết bị.
+Các mã thiết bị và topic dùng tiền tố SmartBin; build lại firmware và dùng bộ QR SmartBin mới khi chuyển từ hệ thống tên cũ.
 
 | Thùng | Mã thiết bị | Chiều cao trong QR | Khoảng cách mặt rác ban đầu | Biến trở mùi |
 |---|---|---|---|---|
-| 1 | `nhom10-trash-7c91a2` | 45 cm | 35 cm, khoảng 25% đầy | 0, thấp |
-| 2 | `nhom10-trash-7c91a2-02` | 60 cm | 10 cm, khoảng 91% đầy | 0, thấp |
-| 3 | `nhom10-trash-7c91a2-03` | 80 cm | 40 cm, khoảng 53% đầy | 800/1023, cao |
+| 1 | `smartbin-7c91a2-01` | 45 cm | 35 cm, khoảng 25% đầy | 0, thấp |
+| 2 | `smartbin-7c91a2-02` | 60 cm | 10 cm, khoảng 91% đầy | 0, thấp |
+| 3 | `smartbin-7c91a2-03` | 80 cm | 40 cm, khoảng 53% đầy | 800/1023, cao |
 
 Mức đầy chỉ xuất hiện sau khi xác nhận chiều cao trên mạch và cảm biến cập nhật khi nắp đóng.
 Các giá trị ban đầu phục vụ minh họa; có thể chỉnh cảm biến riêng trong từng cửa sổ.
@@ -45,7 +45,7 @@ Khi thùng 1 chạy ở thư mục con, dừng phiên chạy ở thư mục gố
 
 QR chứa `heightCm` (cm, từ 10 đến 400, tối đa một chữ số thập phân). Không tự gửi thiết lập khi quét.
 Nếu thùng đã có chiều cao, QR không ghi đè cấu hình đó. Quét lại QR của thùng đã lưu sẽ cập nhật thông tin chiều cao gợi ý và mở chi tiết, không tạo bản sao.
-QR cũ không có chiều cao vẫn được nhận và có thể nhập số đo thủ công.
+QR SmartBin không có chiều cao vẫn được nhận và có thể nhập số đo thủ công. QR của hệ thống trước khi đổi tên cần thay bằng bộ mã mới.
 Tắt/mở mô phỏng vẫn dùng cùng QR; nếu trạng thái lưu trữ của mô phỏng được đặt lại thì xác nhận lại thiết lập bằng số đo sẵn trong QR.
 
 App cài đặt cần build lại vì chức năng quét sử dụng `expo-camera`. Kiểm tra camera và luồng MQTT trên điện thoại thật sau khi build.

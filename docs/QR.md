@@ -8,8 +8,8 @@ Hai thùng bổ sung cao 60 và 80 cm: [trang QR của cả 3 thùng](qr/index.h
 In nền trắng, giữ nguyên viền trắng quanh mã, kích thước khoảng 5–7 cm và dán lên thân thùng.
 Mã khớp `DEVICE_ID` và `MQTT_TOPIC_ROOT` trong `include/Secrets.example.h`, cấu hình firmware đang dùng khi chưa có `Secrets.h`.
 
-QR chứa JSON theo [mẫu](qr/bin-1.json): `type: smart-trash-bin`, `version: 1`, `id`, `topic`, `name`, `location`, `heightCm`.
-Chiều cao được điền sẵn trong bước Thiết lập sau khi thêm thùng. Kiểm tra rồi xác nhận một lần để mạch lưu; QR không ghi đè chiều cao thiết bị đã lưu. QR cũ không có `heightCm` vẫn dùng được.
+QR chứa JSON theo [mẫu](qr/bin-1.json): `type: smartbin-bin`, `version: 1`, `id`, `topic`, `name`, `location`, `heightCm`.
+Chiều cao được điền sẵn trong bước Thiết lập sau khi thêm thùng. Kiểm tra rồi xác nhận một lần để mạch lưu; QR không ghi đè chiều cao thiết bị đã lưu. QR SmartBin không có `heightCm` vẫn dùng được. Khi chuyển từ tên cũ, dùng bộ QR SmartBin mới để khớp ID/topic firmware.
 Mỗi mạch mới cần `id` và `topic` riêng, khớp firmware. QR không chứa mật khẩu và không thay địa chỉ broker của app.
 App vẫn cần kết nối đến cùng broker với thiết bị để nhận dữ liệu; quét QR chỉ thêm thông tin theo dõi.
 

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { parseBinQr } from '../src/binQr.ts';
 import { initialBin } from '../src/model.ts';
 
-const payload = { type: 'smart-trash-bin', version: 1, ...initialBin };
+const payload = { type: 'smartbin-bin', version: 1, ...initialBin };
 test('QR contains the firmware identity and topic', () => {
   assert.deepEqual(parseBinQr(JSON.stringify(payload)), initialBin);
   const first = parseBinQr(readFileSync(new URL('../../docs/qr/bin-1.json', import.meta.url), 'utf8'));
@@ -17,7 +17,7 @@ test('three simulation QRs have independent identities, topics and heights', () 
   assert.equal(new Set(bins.map(bin => bin.id)).size, 3);
   assert.equal(new Set(bins.map(bin => bin.topic)).size, 3);
   assert.deepEqual(bins.map(bin => bin.heightCm), [45, 60, 80]);
-  for (const bin of bins) assert.equal(bin.topic, `nhom10/trash/${bin.id}`);
+  for (const bin of bins) assert.equal(bin.topic, `smartbin/bins/${bin.id}`);
 });
 test('QR height uses centimetres, accepts tenths and rejects invalid measurements', () => {
   for (const heightCm of [10, 45.5, 60, 400]) {

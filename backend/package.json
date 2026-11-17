@@ -1,5 +1,5 @@
 {
-  "name": "smart-trash-backend",
+  "name": "smartbin-backend",
   "private": true,
   "type": "module",
   "engines": { "node": ">=22.13.0" },

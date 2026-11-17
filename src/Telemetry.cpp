@@ -48,7 +48,7 @@ void onMessage(char* topic, uint8_t* payload, unsigned int length) {
   if (BinSettings::validHeight(storedHeight)) { publishResult(request, "already_configured"); return; }
   if (storedHeight != request.heightMm) {
     Preferences preferences;
-    if (!preferences.begin("trash-bin", false)) {
+    if (!preferences.begin("smartbin-bin", false)) {
       publishResult(request, "storage"); return;
     }
     const bool saved = preferences.putUShort("height-mm", request.heightMm) == sizeof(uint16_t);
@@ -171,7 +171,7 @@ void networkTask(void*) {
 }
 uint16_t Telemetry::loadHeight() {
   Preferences preferences;
-  if (!preferences.begin("trash-bin", true)) return 0;
+  if (!preferences.begin("smartbin-bin", true)) return 0;
   const uint16_t mm = preferences.getUShort("height-mm", 0);
   preferences.end();
   storedHeight = BinSettings::validHeight(mm) ? mm : 0;

@@ -1,5 +1,5 @@
 {
-  "name": "mobile",
+  "name": "smartbin-mobile",
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
@@ -33,7 +33,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint App.tsx index.ts src test",
-    "test": "node --experimental-strip-types --test test/model.test.ts test/heightSettings.test.ts test/notifications.test.ts test/notificationDevice.test.ts test/confirmationDialog.test.ts test/binQr.test.ts"
+    "test": "node --experimental-strip-types --test test/model.test.ts test/heightSettings.test.ts test/notifications.test.ts test/notificationDevice.test.ts test/confirmationDialog.test.ts test/binQr.test.ts test/appConfig.test.ts"
   },
   "private": true
 }

@@ -256,7 +256,7 @@ export default function Monitor() {
       >
         {!bin && (
           <>
-            <Text style={s.eyebrow}>THÙNG RÁC THÔNG MINH</Text>
+            <Text style={s.eyebrow}>SMARTBIN</Text>
             <Text style={s.title}>Không gian sạch</Text>
           </>
         )}
@@ -445,7 +445,7 @@ export default function Monitor() {
         )}
         <NotificationSettings state={notifications} />
         <Text style={s.footer}>
-          © {new Date().getFullYear()} Smart Trash Can
+          © {new Date().getFullYear()} SmartBin
         </Text>
       </ScrollView>
       {scanning && (

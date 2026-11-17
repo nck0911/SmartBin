@@ -31,7 +31,7 @@ void setup() {
   environment.setHeight(Telemetry::loadHeight());
   closedAt = millis();
   telemetryReady = Telemetry::begin();
-  Serial.println("[BOOT] Smart trash Nhom 10: local control + independent MQTT task");
+  Serial.println("[BOOT] SmartBin Nhom 10: local control + independent MQTT task");
   if (!telemetryReady) Serial.println("[FAULT] Network task unavailable; local control active");
 }
 void loop() {

@@ -1,4 +1,4 @@
-# ⚙️ Backend Smart Trash
+# ⚙️ Backend SmartBin
 
 Backend theo dõi MQTT, lưu trạng thái cảnh báo bằng SQLite và gửi Expo Push để điện thoại nhận nhắc nhở khi app không mở.
 

@@ -2,6 +2,8 @@
 
 Đi từ bản clone mới đến mô phỏng ESP32, app trên điện thoại, APK và thông báo khi đóng app. Các giá trị trong ví dụ là cấu hình demo hoặc chỗ cần thay bằng project của bạn.
 
+Ứng dụng hiện mang tên **SmartBin**, slug `smartbin`, Android/iOS identifier `com.smartbin.mobile`. Khi chuyển từ cấu hình cũ, tạo/liên kết project Expo mới có slug `smartbin`, đăng ký Firebase app cho package mới, tải Firebase JSON mới và cập nhật FCM V1 trên EAS trước khi build. Không sửa package name trực tiếp trong Firebase JSON cũ. Mã QR và ID/topic mô phỏng cũng đã chuyển sang SmartBin.
+
 ## Mục lục
 
 1. [Chọn mức chạy và chuẩn bị](#prepare)
@@ -41,14 +43,14 @@ Các lệnh dưới đây dùng PowerShell. Khi gặp `npm.ps1 cannot be loaded`
 | --- | --- | --- | --- |
 | Firmware | `include/Secrets.h` | Sao chép `include/Secrets.example.h`, điền Wi-Fi/broker của bạn | Khi đổi cấu hình mặc định |
 | Mobile | `mobile/.env` | Sao chép `mobile/.env.example` | Cấu hình project Expo để build/push |
-| Firebase Android | `mobile/google-services.json` | Firebase → Project settings → Your apps → Android | Push Android |
+| Firebase Android | `mobile/google-services.smartbin.json` | Firebase → Project settings → Your apps → Android | Push Android |
 | Expo cloud build | `EAS_PROJECT_ID`, `GOOGLE_SERVICES_JSON` | Expo → Environment variables → preview | Build theo project/cấu hình của bạn |
 | Android signing | Keystore và thông tin ký | EAS tạo hoặc dùng bản ký hiện có | APK và các bản cập nhật |
 | FCM V1 | JSON service account | Firebase → Project settings → Service accounts | Upload vào Expo cho push Android |
 | Backend | `backend/.env` | Sao chép `backend/.env.example` | Push khi app đóng |
 | Dữ liệu backend | `backend/data/` | Tự tạo khi chạy dịch vụ | Giữ trạng thái và đăng ký qua restart |
 
-Các file cấu hình riêng được Git bỏ qua. Lưu file ký và JSON service account trong `.local/credentials/`; chỉ dùng `google-services.json` làm cấu hình Firebase của app. Dependencies (`node_modules/`) và firmware build (`.pio/`) được tạo lại bằng lệnh cài đặt/build.
+Các file cấu hình riêng được Git bỏ qua. Lưu file ký và JSON service account trong `.local/credentials/`; chỉ dùng `google-services.smartbin.json` làm cấu hình Firebase của app. Dependencies (`node_modules/`) và firmware build (`.pio/`) được tạo lại bằng lệnh cài đặt/build.
 
 <a id="firmware"></a>
 ## 3. Firmware và Wokwi
@@ -116,13 +118,13 @@ Chiều cao lưu trên ESP32; không sửa code mỗi khi đổi thùng. Chi ti�
 ## 6. Tạo project Expo
 
 1. Đăng nhập [Expo Dashboard](https://expo.dev/), chọn tài khoản của bạn rồi tạo project mới; nếu đã có project phù hợp thì mở lại project đó.
-2. Đặt tên hiển thị tùy chọn; dùng slug `smart-trash` để khớp `mobile/app.json`. Nếu chọn slug khác, sửa `expo.slug` trong file này cho khớp.
+2. Đặt tên hiển thị tùy chọn; dùng slug `smartbin` để khớp `mobile/app.json`. Nếu chọn slug khác, sửa `expo.slug` trong file này cho khớp.
 3. Trong trang project, mở **Project settings → General** và tìm **Project ID** dạng UUID. Dùng ID của Expo, khác với ID dạng tên của Firebase.
 4. Điền vào `mobile/.env`:
 
 ```dotenv
 EAS_PROJECT_ID=<UUID-project-Expo-cua-ban>
-GOOGLE_SERVICES_JSON=./google-services.json
+GOOGLE_SERVICES_JSON=./google-services.smartbin.json
 ```
 
 Thay phần `<...>` bằng UUID thật. `app.config.js` đọc biến này để liên kết, không cần đưa ID riêng vào `app.json`. Nếu trang tạo project dẫn sang build, có thể quay về trang project để cấu hình trước.
@@ -152,19 +154,19 @@ CLI đọc `EXPO_TOKEN` từ tiến trình, không tự lấy biến đăng nh�
 
 1. Mở [Firebase Console](https://console.firebase.google.com/), chọn **Create a project** hoặc project đã có.
 2. Vào **Project settings → General → Your apps**, thêm ứng dụng **Android**.
-3. Điền Android package name: `com.smarttrashcan.mobile`, khớp `mobile/app.config.js`. Nếu đổi package cho ứng dụng riêng, sửa cả hai nơi trước khi build.
-4. Đăng ký ứng dụng, tải **google-services.json** và đặt tại `mobile/google-services.json`.
+3. Điền Android package name: `com.smartbin.mobile`, khớp `mobile/app.config.js`. Nếu đổi package cho ứng dụng riêng, sửa cả hai nơi trước khi build.
+4. Đăng ký ứng dụng, tải **google-services.json**, đổi tên file tải về thành **google-services.smartbin.json** và đặt tại `mobile/google-services.smartbin.json`.
 5. Với Expo, cấu hình native do plugin và `app.config.js` xử lý; tiếp tục hoàn tất trình hướng dẫn Firebase, không cần chép thủ công đoạn Gradle vào repo.
 6. Trong **Project settings → Service accounts**, chọn **Generate new private key → Generate key**, lưu JSON nhận được vào `.local/credentials/`. Tab Node.js ở đây chỉ là ví dụ Admin SDK; app Expo không cần chép đoạn code đó.
 
-Hai JSON có vai trò khác nhau: `google-services.json` dùng cho bản app Android; JSON service account dùng ở bước cấu hình FCM V1 trên Expo. Giữ chúng đúng vị trí theo bảng phần 2.
+Hai JSON có vai trò khác nhau: `google-services.smartbin.json` dùng cho bản app Android; JSON service account dùng ở bước cấu hình FCM V1 trên Expo. Giữ chúng đúng vị trí theo bảng phần 2.
 
 <a id="signing"></a>
 ## 8. Ký ứng dụng Android
 
 Cách đơn giản là để EAS tạo keystore khi build lần đầu: chọn tạo mới nếu CLI hỏi và bạn chưa có bản ký cho ứng dụng này. Nếu đã có cấu hình ký, chọn dùng lại.
 
-Nếu thiết lập bằng trang **Expo → Project settings → Credentials → Android → Add application identifier**, nhập `com.smarttrashcan.mobile`. Khi wizard yêu cầu upload keystore, điền các trường sau:
+Nếu thiết lập bằng trang **Expo → Project settings → Credentials → Android → Add application identifier**, nhập `com.smartbin.mobile`. Khi wizard yêu cầu upload keystore, điền các trường sau:
 
 | Trường trên giao diện | Nội dung |
 | --- | --- |
@@ -177,10 +179,10 @@ Nếu chưa có keystore mà muốn hoàn tất bằng giao diện web, cài JDK
 
 ```powershell
 New-Item -ItemType Directory -Force .local/credentials
-keytool -genkeypair -v -storetype JKS -keystore .local/credentials/android-release.jks -alias smart-trash-upload -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkeypair -v -storetype JKS -keystore .local/credentials/smartbin-android-release.jks -alias smartbin-upload -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-Trả lời thông tin và đặt mật khẩu theo lời nhắc. Alias trong ví dụ là `smart-trash-upload`; dùng đúng giá trị đó khi upload. Nếu chọn mật khẩu key giống keystore, điền cùng giá trị vào hai trường password.
+Trả lời thông tin và đặt mật khẩu theo lời nhắc. Alias trong ví dụ là `smartbin-upload`; dùng đúng giá trị đó khi upload. Nếu chọn mật khẩu key giống keystore, điền cùng giá trị vào hai trường password.
 
 Trong wizard, bước **Google Service Account Key** có mô tả **Expo Submit upload your app to Google Play** là cấu hình phát hành lên Play. Khi chỉ cần APK, chọn **Skip this step** ở bước đó rồi **Next → Submit**. Phần FCM cho thông báo được thiết lập riêng ở phần 10.
 
@@ -194,7 +196,7 @@ File `.env` trên máy không tự xuất hiện trong cloud build. Trong projec
 | Name | Value | Kiểu/Visibility | Environments |
 | --- | --- | --- | --- |
 | `EAS_PROJECT_ID` | UUID cùng giá trị trong `mobile/.env` | Text / Plain text | `preview` |
-| `GOOGLE_SERVICES_JSON` | Chọn file `mobile/google-services.json` | File / Secret | `preview` |
+| `GOOGLE_SERVICES_JSON` | Chọn file `mobile/google-services.smartbin.json` | File / Secret | `preview` |
 
 Với biến kiểu file, dùng nút/biểu tượng upload cạnh ô Value để chọn file; không nhập đường dẫn Windows vào Value. Chọn **preview** bên dưới rồi **Add variables**. Kiểm tra danh sách có đủ hai tên và nhãn môi trường preview.
 
@@ -204,7 +206,7 @@ Với biến kiểu file, dùng nút/biểu tượng upload cạnh ô Value đ�
 ## 10. Thiết lập FCM V1 trên Expo
 
 1. Vào project Expo → **Project settings → Credentials**.
-2. Chọn Android application identifier `com.smarttrashcan.mobile` đã tạo ở phần 8.
+2. Chọn Android application identifier `com.smartbin.mobile` đã tạo ở phần 8.
 3. Trong **Service credentials → FCM V1 service account key**, chọn **Add a service account key**.
 4. Chọn **Upload new key**, upload JSON service account từ phần 7, rồi **Save**. Nếu đã có bản đúng project, có thể chọn dùng lại.
 
@@ -255,7 +257,7 @@ Copy-Item .env.example .env
 Ví dụ danh sách cho cấu hình mô phỏng mặc định:
 
 ```dotenv
-DEVICES_JSON=[{"id":"nhom10-trash-7c91a2","topic":"nhom10/trash/nhom10-trash-7c91a2"}]
+DEVICES_JSON=[{"id":"smartbin-7c91a2-01","topic":"smartbin/bins/smartbin-7c91a2-01"}]
 ```
 
 Chạy và kiểm tra từ terminal trong `backend/`:

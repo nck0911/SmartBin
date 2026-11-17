@@ -7,5 +7,5 @@
 #define MQTT_USER ""
 #define MQTT_PASSWORD ""
 // Use a unique ID and topic for each simultaneous simulation.
-#define DEVICE_ID "nhom10-trash-7c91a2"
-#define MQTT_TOPIC_ROOT "nhom10/trash/nhom10-trash-7c91a2"
+#define DEVICE_ID "smartbin-7c91a2-01"
+#define MQTT_TOPIC_ROOT "smartbin/bins/smartbin-7c91a2-01"

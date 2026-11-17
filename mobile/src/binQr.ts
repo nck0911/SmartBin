@@ -6,7 +6,7 @@ export function parseBinQr(raw: string): Bin {
   if (raw.length > 2048) throw new Error('Mã QR quá dài.');
   let data;
   try { data = JSON.parse(raw); } catch { throw new Error('Đây không phải mã QR thùng rác.'); }
-  if (!data || data.type !== 'smart-trash-bin' || data.version !== 1 ||
+  if (!data || data.type !== 'smartbin-bin' || data.version !== 1 ||
       !['id', 'name', 'location', 'topic'].every(key => typeof data[key] === 'string' && data[key].length <= 256)) {
     throw new Error('Mã QR thùng rác không hợp lệ hoặc chưa được hỗ trợ.');
   }

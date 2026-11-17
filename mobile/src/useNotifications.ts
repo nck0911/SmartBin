@@ -7,7 +7,7 @@ import { AlertTracker, notificationFetch, registerPush, serverUrl, targetKey } f
 import type { NotificationSettings } from './notificationModel';
 
 type Input = { bins: Bin[]; broker: string; readings: Record<string, Reading>; ready: boolean; connected: boolean; demo: boolean; now: number };
-const storageKey = 'trash-notifications-v1';
+const storageKey = 'smartbin-notifications-v1';
 export function useNotifications(monitor: Input, openBin: (id: string) => void, setDemo: (demo: boolean) => void) {
   const { bins, broker, readings, ready, connected, demo, now } = monitor;
   const [settings, setSettings] = useState<NotificationSettings>(() => ({ mode: 'off', installationId: `install_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`, serverUrl: '', targets: [] }));
@@ -128,7 +128,7 @@ export function useNotifications(monitor: Input, openBin: (id: string) => void, 
     if (!(await notificationDevice.permission())) throw new Error('Hãy cho phép thông báo trong cài đặt điện thoại.');
     const bin = bins[0];
     if (!bin) throw new Error('Thêm một thùng để thử thông báo.');
-    await notificationDevice.show({ title: 'Thử thông báo thùng rác', body: `${bin.name} · Đây là thông báo kiểm tra.`, data: { type: 'trash-alert', binId: bin.id, topic: bin.topic, brokerUrl: broker, kind: 'full', eventId: `test_${Date.now()}`, demo } });
+    await notificationDevice.show({ title: 'Thử thông báo thùng rác', body: `${bin.name} · Đây là thông báo kiểm tra.`, data: { type: 'smartbin-alert', binId: bin.id, topic: bin.topic, brokerUrl: broker, kind: 'full', eventId: `test_${Date.now()}`, demo } });
     setMessage('Đã gửi thông báo thử trên điện thoại.');
   });
   return { settings, loaded, busy, message, error, supported: notificationDevice.supported, supportsPush: notificationDevice.supportsPush, enableLocal, enablePush, disable, test, sync: () => setRevision(old => old + 1) };

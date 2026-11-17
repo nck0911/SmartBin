@@ -1,4 +1,4 @@
-# 📱 Smart Trash Mobile
+# 📱 SmartBin Mobile
 
 Ứng dụng React Native + Expo + TypeScript để theo dõi mức đầy, tình trạng mùi và quản lý danh sách thùng rác.
 
@@ -63,7 +63,7 @@ App nhận trạng thái để theo dõi; firmware tự điều khiển nắp. X
 Profile `preview` trong `eas.json` đã tạo APK cài độc lập. Thiết lập một lần cho project của bạn:
 
 1. Sao chép `.env.example` thành `.env` nếu chưa có, điền `EAS_PROJECT_ID` của project Expo.
-2. Đặt `google-services.json` tại `mobile/` khi dùng Firebase Android. Application ID đăng ký trên Firebase phải khớp `com.smarttrashcan.mobile` trong `app.config.js`.
+2. Đặt `google-services.smartbin.json` tại `mobile/` khi dùng Firebase Android. Application ID đăng ký trên Firebase phải khớp `com.smartbin.mobile` trong `app.config.js`.
 3. Trên Expo Dashboard → **Environment variables**, thêm `EAS_PROJECT_ID` kiểu text (Plain text) và `GOOGLE_SERVICES_JSON` kiểu file vào môi trường **preview**. Chọn file cấu hình Android ở bước trên cho biến kiểu file.
 4. Hoàn tất cấu hình ký Android theo hướng dẫn của EAS. Nếu cần push, làm thêm [thiết lập thông báo](../docs/NOTIFICATIONS.md).
 

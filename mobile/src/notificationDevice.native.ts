@@ -61,8 +61,8 @@ export const notificationDevice = {
     const channelId = customChannelId();
     await module.scheduleNotificationAsync({ content: { title: message.title, body: message.body, data: message.data, sound: 'default' }, trigger: channelId ? { channelId } : null });
   },
-  async saveSecret(value: string) { await SecureStore.setItemAsync('trash-push-secret', value); },
-  async secret() { return SecureStore.getItemAsync('trash-push-secret'); },
+  async saveSecret(value: string) { await SecureStore.setItemAsync('smartbin-push-secret', value); },
+  async secret() { return SecureStore.getItemAsync('smartbin-push-secret'); },
   listen(onTap: (data: AlertData) => void) {
     let cancelled = false;
     let subscription: { remove: () => void } | undefined;

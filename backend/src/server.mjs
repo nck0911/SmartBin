@@ -34,7 +34,7 @@ const timer = setInterval(async () => {
 }, 1000);
 const server = createServer(createHandler({ store, pairingCode, devices, appBrokerUrl: process.env.APP_BROKER_URL, isConnected: () => client.connected }));
 server.requestTimeout = 10_000;
-server.listen(Number(process.env.PORT || 8787), process.env.HOST || '127.0.0.1', () => console.log('Smart Trash backend listening.'));
+server.listen(Number(process.env.PORT || 8787), process.env.HOST || '127.0.0.1', () => console.log('SmartBin backend listening.'));
 function shutdown() { clearInterval(timer); client.end(true); server.close(); /* OS closes SQLite after pending work exits. */ }
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);

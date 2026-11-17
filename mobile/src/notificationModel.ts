@@ -1,7 +1,7 @@
 import type { Bin, Reading } from './model';
 
 export type AlertKind = 'full' | 'odor';
-export type AlertData = { type: 'trash-alert'; binId: string; topic: string; brokerUrl: string; kind: AlertKind; eventId: string; demo: boolean };
+export type AlertData = { type: 'smartbin-alert'; binId: string; topic: string; brokerUrl: string; kind: AlertKind; eventId: string; demo: boolean };
 export type AlertMessage = { title: string; body: string; data: AlertData };
 export type NotificationSettings = { mode: 'off' | 'local' | 'push'; installationId: string; serverUrl: string; targets: string[] };
 export const targetKey = (bin: Bin, broker: string) => `${broker}|${bin.id}|${bin.topic}`;
@@ -9,7 +9,7 @@ export const targetKey = (bin: Bin, broker: string) => `${broker}|${bin.id}|${bi
 export function alertData(value: unknown): AlertData | null {
   if (!value || typeof value !== 'object') return null;
   const d = value as Record<string, unknown>;
-  return d.type === 'trash-alert' && typeof d.binId === 'string' && typeof d.topic === 'string' && typeof d.brokerUrl === 'string' &&
+  return d.type === 'smartbin-alert' && typeof d.binId === 'string' && typeof d.topic === 'string' && typeof d.brokerUrl === 'string' &&
     (d.kind === 'full' || d.kind === 'odor') && typeof d.eventId === 'string' && typeof d.demo === 'boolean' ? d as AlertData : null;
 }
 export class AlertTracker {
@@ -31,7 +31,7 @@ export class AlertTracker {
       if (values[kind] && !previous[kind]) events.push({
         title: `${demo ? 'Thử · ' : ''}${kind === 'full' ? 'Thùng rác đã đầy' : 'Thùng rác có mùi hôi'}`,
         body: `${bin.name} ${kind === 'full' ? 'cần được thu gom.' : 'cần được kiểm tra và vệ sinh.'}`,
-        data: { type: 'trash-alert', binId: bin.id, topic: bin.topic, brokerUrl: broker, kind, eventId: `${key}|${kind}|${reading.receivedAt}`, demo },
+        data: { type: 'smartbin-alert', binId: bin.id, topic: bin.topic, brokerUrl: broker, kind, eventId: `${key}|${kind}|${reading.receivedAt}`, demo },
       });
     }
     this.states.set(key, next);

@@ -13,9 +13,9 @@ export function processReading(store, device, raw, retained, now = Date.now()) {
 }
 export function pushMessage(job, token, brokerUrl) {
   return {
-    to: token, sound: 'default', channelId: 'trash-alerts-v2', priority: 'high', ttl: 300,
+    to: token, sound: 'default', channelId: 'smartbin-alerts-v1', priority: 'high', ttl: 300,
     title: job.kind === 'full' ? 'Thùng rác đã đầy' : 'Thùng rác có mùi hôi',
     body: job.kind === 'full' ? `${job.name} cần được thu gom.` : `${job.name} cần được kiểm tra và vệ sinh.`,
-    data: { type: 'trash-alert', binId: job.device, topic: job.topic, brokerUrl, kind: job.kind, eventId: job.id, demo: false },
+    data: { type: 'smartbin-alert', binId: job.device, topic: job.topic, brokerUrl, kind: job.kind, eventId: job.id, demo: false },
   };
 }

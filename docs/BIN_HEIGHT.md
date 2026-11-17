@@ -27,7 +27,7 @@ Chiều cao nhập 10–400 cm, độ phân giải 0,1 cm. Mốc đầy 5 cm; c�
 
 1. App chờ bản tin mới từ thiết bị, không dùng retained-only hoặc dữ liệu quá 15 giây để gửi thiết lập.
 2. App publish QoS 0, **không retained**, tới `<root>/config/set`.
-3. Firmware kiểm tra phiên khởi động, hạn dùng và miền giá trị; lưu `height-mm` dạng uint16 trong namespace NVS `trash-bin` bằng Preferences trên task mạng.
+3. Firmware kiểm tra phiên khởi động, hạn dùng và miền giá trị; lưu `height-mm` dạng uint16 trong namespace NVS `smartbin-bin` bằng Preferences trên task mạng.
 4. Queue chuyển thiết lập sang vòng điều khiển. Sau khi áp dụng, firmware trả kết quả **không retained** tại `<root>/config/result`.
 5. App chỉ báo thành công với phản hồi đúng device ID, request ID và chiều cao; broker publish callback không phải xác nhận của thiết bị. Timeout 12 giây hoặc đổi kết nối sẽ kết thúc chờ bằng thông báo chưa xác nhận. Nếu mất ACK, kiểm tra state mới để biết giá trị thực tế.
 

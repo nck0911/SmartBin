@@ -23,7 +23,7 @@ export function useMonitor() {
   const connected = stream.scope === scope && stream.connected;
   const readings = stream.scope === scope ? stream.readings : {};
   useEffect(() => {
-    AsyncStorage.getItem('trash-monitor-v1').then(raw => {
+    AsyncStorage.getItem('smartbin-monitor-v1').then(raw => {
       if (!raw) return;
       const saved = JSON.parse(raw);
       if (Array.isArray(saved.bins) && saved.bins.every((b: Bin) => b && ['id','name','location','topic'].every(k => typeof (b as any)[k] === 'string')) && typeof saved.broker === 'string' && /^wss:\/\//.test(saved.broker)) {
@@ -42,7 +42,7 @@ export function useMonitor() {
     return () => { clearInterval(timer); sub.remove(); };
   }, []);
   useEffect(() => {
-    if (ready) AsyncStorage.setItem('trash-monitor-v1', JSON.stringify({ bins, broker, onboardingVersion: 2 })).catch(() => setError('Không lưu được cấu hình.'));
+    if (ready) AsyncStorage.setItem('smartbin-monitor-v1', JSON.stringify({ bins, broker, onboardingVersion: 2 })).catch(() => setError('Không lưu được cấu hình.'));
   }, [ready, bins, broker]);
   useEffect(() => {
     const { ready, active, demo, bins, broker, demoHeights } = scope;
@@ -66,7 +66,7 @@ export function useMonitor() {
       const timer = setInterval(update, 2000);
       return () => { clearTimeout(first); clearInterval(timer); };
     }
-    const client = mqtt.connect(broker, { clientId: `trash_app_${Math.random().toString(16).slice(2)}`, clean: true, queueQoSZero: false, reconnectPeriod: 3000, connectTimeout: 10000, forceNativeWebSocket: true });
+    const client = mqtt.connect(broker, { clientId: `smartbin_app_${Math.random().toString(16).slice(2)}`, clean: true, queueQoSZero: false, reconnectPeriod: 3000, connectTimeout: 10000, forceNativeWebSocket: true });
     clientRef.current = client;
     client.on('connect', () => {
       setConnected(true); setError('');
