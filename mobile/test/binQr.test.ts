@@ -7,7 +7,7 @@ import { initialBin } from '../src/model.ts';
 const payload = { type: 'smart-trash-bin', version: 1, ...initialBin };
 test('QR contains the firmware identity and topic', () => {
   assert.deepEqual(parseBinQr(JSON.stringify(payload)), initialBin);
-  const first = parseBinQr(readFileSync(new URL('../../docs/qr/nhom10-trash-7c91a2.json', import.meta.url), 'utf8'));
+  const first = parseBinQr(readFileSync(new URL('../../docs/qr/bin-1.json', import.meta.url), 'utf8'));
   assert.equal(first.id, initialBin.id);
   assert.equal(first.topic, initialBin.topic);
   assert.equal(first.heightCm, 45);
