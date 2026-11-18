@@ -56,7 +56,6 @@ Phạm vi hiện tại là mô phỏng và demo. Tín hiệu mùi được giả
 - **Nhận biết trạng thái:** phân biệt mất kết nối, thiết bị offline, chờ dữ liệu và dữ liệu cũ.
 - **Lưu danh sách:** giữ thông tin thùng trên thiết bị để sử dụng khi mở lại ứng dụng.
 - **Thiết lập chiều cao:** thiết lập chiều cao bên trong thùng một lần trên app, lưu trên ESP32 và dùng lại sau khi khởi động.
-- **Chế độ minh họa:** trải nghiệm giao diện và cảnh báo mà không cần ESP32.
 - **Thông báo:** nhắc thu gom hoặc vệ sinh khi thùng chuyển sang cảnh báo; có chế độ khi mở app và luồng push qua dịch vụ theo dõi độc lập.
 
 Ứng dụng nhận dữ liệu để theo dõi; việc đóng/mở nắp do firmware điều khiển tại thiết bị. Push khi không mở app cần bản cài riêng, quyền thông báo và dịch vụ gửi push đã được thiết lập.
@@ -198,9 +197,7 @@ Chạy `npm ci` lần đầu hoặc khi dependencies thay đổi. Nhấn `Ctrl+C
 <a id="demo"></a>
 ## 🎮 Trải nghiệm demo
 
-**Với ứng dụng:** bật **Chế độ minh họa**, thêm thùng demo có cảnh báo, thử tìm kiếm, lọc và mở chi tiết. Chế độ này sử dụng dữ liệu giả lập riêng để trải nghiệm giao diện.
-
-**Với mô phỏng Wokwi:** mở chi tiết thùng trong app, chọn **Thiết lập**, nhập **Chiều cao bên trong thùng** và chờ xác nhận. Đo từ mặt dưới nắp khi đóng đến đáy bên trong thùng. Với cảm biến gắn dưới nắp, hướng xuống đáy, mức đầy được tính theo chiều cao đã nhập; khoảng trống 5 cm tương ứng 100%.
+**Với mô phỏng Wokwi:** chạy firmware và backend, thêm thùng trên app bằng QR hoặc nhập tay. App lấy chiều cao chuẩn từ backend và tự đồng bộ với thiết bị chưa thiết lập. Với cảm biến gắn dưới nắp, hướng xuống đáy, mức đầy được tính theo chiều cao bên trong thùng; khoảng trống 5 cm tương ứng 100%.
 
 Sau khi thiết lập:
 
@@ -210,7 +207,7 @@ Sau khi thiết lập:
 4. Khi nắp đã đóng, giảm khoảng cách tới mặt rác để quan sát mức đầy và cảnh báo.
 5. Điều chỉnh biến trở để giả lập mùi tăng/giảm; quan sát “Mức mùi” và cảnh báo “Có mùi hôi” trên app.
 
-Khi theo dõi dữ liệu từ mô phỏng, tắt chế độ minh họa trong ứng dụng. Chú ý trạng thái cập nhật và thời gian nhận dữ liệu khi đọc cảnh báo.
+Chú ý trạng thái cập nhật và thời gian nhận dữ liệu khi đọc cảnh báo.
 
 <a id="notifications"></a>
 ## 🔔 Thông báo trên điện thoại

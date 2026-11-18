@@ -9,9 +9,9 @@
 <a id="calculation"></a>
 ## Quy ước lắp đặt và tính mức đầy
 
-Chiều cao chỉ được thiết lập **một lần cho mỗi thiết bị**. App chỉ hiện phần nhập khi thiết bị xác nhận chưa có chiều cao. Khi đã có cấu hình sẵn hoặc đã lưu thành công, phần thiết lập được ẩn; khởi động lại hay dùng điện thoại khác không mở lại quyền sửa. Trước khi lưu, hộp thoại ghi rõ số đo và yêu cầu xác nhận vì người dùng không thể chỉnh lại trong app.
+Chiều cao là thông tin do bên triển khai đo và khai báo trong `DEVICES_JSON` của backend. Khi thêm thùng bằng tay hoặc QR, app lấy chiều cao từ API xác minh, hiển thị trong chi tiết và không yêu cầu người dùng nhập lại.
 
-Hiện app dùng trạng thái `configured` từ thiết bị để xác định đã thiết lập hay chưa; luồng quét QR chưa được triển khai. Thiết bị đã có chiều cao sẽ không yêu cầu nhập thêm.
+Chiều cao chỉ được ghi **một lần cho mỗi thiết bị**. App tự gửi chiều cao đã được backend xác minh khi nhận telemetry mới có `configured=false`, session hợp lệ và thiết bị online. Mỗi session thử tối đa ba lần, cách nhau ít nhất 15 giây. Chỉ thiết bị xác nhận mới hoàn tất lưu; không ghi đè thiết bị có `configured=true`. Luồng nhập/xác nhận cũ chỉ còn dành cho bản ghi cũ chưa có chiều cao từ hệ thống.
 
 Cảm biến đặt ở mặt dưới nắp, hướng xuống đáy. Người dùng nhập chiều cao bên trong, đo từ mặt dưới nắp đóng đến đáy. Phần firmware có `sensorOffsetCm` để bù độ nhô của mặt cảm biến so với mặt dưới nắp; mặc định 0 giả định lắp phẳng. Khi làm giá đỡ thật, đo độ nhô và đặt giá trị cố định cho mẫu giá đỡ, không bắt người dùng tự nhập độ lệch này.
 

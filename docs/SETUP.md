@@ -43,14 +43,14 @@ Các lệnh dưới đây dùng PowerShell. Khi gặp `npm.ps1 cannot be loaded`
 | --- | --- | --- | --- |
 | Firmware | `include/Secrets.h` | Sao chép `include/Secrets.example.h`, điền Wi-Fi/broker của bạn | Khi đổi cấu hình mặc định |
 | Mobile | `mobile/.env` | Sao chép `mobile/.env.example` | Cấu hình project Expo để build/push |
-| Firebase Android | `mobile/google-services.smartbin.json` | Firebase → Project settings → Your apps → Android | Push Android |
+| Firebase Android | `mobile/google-services.json` | Firebase → Project settings → Your apps → Android | Push Android |
 | Expo cloud build | `EAS_PROJECT_ID`, `GOOGLE_SERVICES_JSON` | Expo → Environment variables → preview | Build theo project/cấu hình của bạn |
 | Android signing | Keystore và thông tin ký | EAS tạo hoặc dùng bản ký hiện có | APK và các bản cập nhật |
 | FCM V1 | JSON service account | Firebase → Project settings → Service accounts | Upload vào Expo cho push Android |
 | Backend | `backend/.env` | Sao chép `backend/.env.example` | Push khi app đóng |
 | Dữ liệu backend | `backend/data/` | Tự tạo khi chạy dịch vụ | Giữ trạng thái và đăng ký qua restart |
 
-Các file cấu hình riêng được Git bỏ qua. Lưu file ký và JSON service account trong `.local/credentials/`; chỉ dùng `google-services.smartbin.json` làm cấu hình Firebase của app. Dependencies (`node_modules/`) và firmware build (`.pio/`) được tạo lại bằng lệnh cài đặt/build.
+Các file cấu hình riêng được Git bỏ qua. Lưu file ký và JSON service account trong `.local/credentials/`; chỉ dùng `google-services.json` làm cấu hình Firebase của app. Dependencies (`node_modules/`) và firmware build (`.pio/`) được tạo lại bằng lệnh cài đặt/build.
 
 <a id="firmware"></a>
 ## 3. Firmware và Wokwi
@@ -87,7 +87,7 @@ Copy-Item .env.example .env
 npm start
 ```
 
-Để trống `EAS_PROJECT_ID` nếu chỉ thử Expo Go. Quét QR bằng Expo Go trên Android hoặc Camera trên iPhone. Cùng mạng Wi-Fi thì dùng lệnh trên, không cần tunnel. Bật **Chế độ minh họa** trong app để thử mà chưa chạy Wokwi.
+Để trống `EAS_PROJECT_ID` nếu chỉ thử Expo Go. Quét QR bằng Expo Go trên Android hoặc Camera trên iPhone. Cùng mạng Wi-Fi thì dùng lệnh trên, không cần tunnel. Chạy Wokwi để app nhận dữ liệu thùng qua MQTT.
 
 Với LDPlayer:
 
@@ -105,8 +105,8 @@ Thay phần trong `<...>` bằng địa chỉ thật. Nếu máy ảo đã xuấ
 <a id="bin"></a>
 ## 5. Kết nối app với thùng và nhập chiều cao
 
-1. Chạy Wokwi và tắt **Chế độ minh họa** trong app.
-2. Chọn **Cấu hình kết nối**. Điền địa chỉ broker WebSocket; bản demo mặc định là `wss://broker.hivemq.com:8884/mqtt`. Chọn **Lưu thay đổi**.
+1. Chạy Wokwi để gửi dữ liệu thùng qua MQTT.
+2. Bên triển khai đặt `EXPO_PUBLIC_MQTT_URL` trong `mobile/.env`, khớp `APP_BROKER_URL` của backend, rồi khởi động lại Expo. Ví dụ broker mô phỏng: `wss://broker.hivemq.com:8884/mqtt`. Người dùng không cần nhập địa chỉ trong app.
 3. Chọn **+ Thêm thùng**. Nhập tên, vị trí, **Mã thiết bị** và **Đường dẫn dữ liệu** đúng với firmware. Với thùng đã thêm, **Sửa thông tin** chỉ cập nhật tên và vị trí.
 4. Mở chi tiết thùng và chờ dữ liệu mới. Nếu thiết bị chưa có chiều cao, chọn **Thiết lập**; thùng đã có cấu hình sẽ không hiện phần này.
 5. Nhập **Chiều cao bên trong thùng**, đo từ mặt dưới nắp đóng đến đáy. Ví dụ 45 cm; chọn lưu và chờ thiết bị xác nhận.
@@ -124,7 +124,8 @@ Chiều cao lưu trên ESP32; không sửa code mỗi khi đổi thùng. Chi ti�
 
 ```dotenv
 EAS_PROJECT_ID=<UUID-project-Expo-cua-ban>
-GOOGLE_SERVICES_JSON=./google-services.smartbin.json
+EXPO_PUBLIC_MQTT_URL=wss://broker.hivemq.com:8884/mqtt
+GOOGLE_SERVICES_JSON=./google-services.json
 ```
 
 Thay phần `<...>` bằng UUID thật. `app.config.js` đọc biến này để liên kết, không cần đưa ID riêng vào `app.json`. Nếu trang tạo project dẫn sang build, có thể quay về trang project để cấu hình trước.
@@ -155,11 +156,11 @@ CLI đọc `EXPO_TOKEN` từ tiến trình, không tự lấy biến đăng nh�
 1. Mở [Firebase Console](https://console.firebase.google.com/), chọn **Create a project** hoặc project đã có.
 2. Vào **Project settings → General → Your apps**, thêm ứng dụng **Android**.
 3. Điền Android package name: `com.smartbin.mobile`, khớp `mobile/app.config.js`. Nếu đổi package cho ứng dụng riêng, sửa cả hai nơi trước khi build.
-4. Đăng ký ứng dụng, tải **google-services.json**, đổi tên file tải về thành **google-services.smartbin.json** và đặt tại `mobile/google-services.smartbin.json`.
+4. Đăng ký ứng dụng, tải **google-services.json**, giữ nguyên tên file và đặt tại `mobile/google-services.json`.
 5. Với Expo, cấu hình native do plugin và `app.config.js` xử lý; tiếp tục hoàn tất trình hướng dẫn Firebase, không cần chép thủ công đoạn Gradle vào repo.
-6. Trong **Project settings → Service accounts**, chọn **Generate new private key → Generate key**, lưu JSON nhận được vào `.local/credentials/`. Tab Node.js ở đây chỉ là ví dụ Admin SDK; app Expo không cần chép đoạn code đó.
+6. Trong **Project settings → Service accounts**, chọn **Generate new private key → Generate key**, giữ nguyên tên JSON tải về và lưu vào `.local/credentials/`. Tab Node.js ở đây chỉ là ví dụ Admin SDK; app Expo không cần chép đoạn code đó.
 
-Hai JSON có vai trò khác nhau: `google-services.smartbin.json` dùng cho bản app Android; JSON service account dùng ở bước cấu hình FCM V1 trên Expo. Giữ chúng đúng vị trí theo bảng phần 2.
+Hai JSON có vai trò khác nhau: `google-services.json` dùng cho bản app Android; JSON service account dùng ở bước cấu hình FCM V1 trên Expo. Giữ chúng đúng vị trí theo bảng phần 2.
 
 <a id="signing"></a>
 ## 8. Ký ứng dụng Android
@@ -179,10 +180,10 @@ Nếu chưa có keystore mà muốn hoàn tất bằng giao diện web, cài JDK
 
 ```powershell
 New-Item -ItemType Directory -Force .local/credentials
-keytool -genkeypair -v -storetype JKS -keystore .local/credentials/smartbin-android-release.jks -alias smartbin-upload -keyalg RSA -keysize 2048 -validity 10000
+keytool -genkeypair -v -storetype JKS -keystore .local/credentials/android-release.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-Trả lời thông tin và đặt mật khẩu theo lời nhắc. Alias trong ví dụ là `smartbin-upload`; dùng đúng giá trị đó khi upload. Nếu chọn mật khẩu key giống keystore, điền cùng giá trị vào hai trường password.
+Trả lời thông tin và đặt mật khẩu theo lời nhắc. Alias trong ví dụ là `upload`; dùng đúng giá trị đó khi upload. Nếu chọn mật khẩu key giống keystore, điền cùng giá trị vào hai trường password.
 
 Trong wizard, bước **Google Service Account Key** có mô tả **Expo Submit upload your app to Google Play** là cấu hình phát hành lên Play. Khi chỉ cần APK, chọn **Skip this step** ở bước đó rồi **Next → Submit**. Phần FCM cho thông báo được thiết lập riêng ở phần 10.
 
@@ -196,7 +197,7 @@ File `.env` trên máy không tự xuất hiện trong cloud build. Trong projec
 | Name | Value | Kiểu/Visibility | Environments |
 | --- | --- | --- | --- |
 | `EAS_PROJECT_ID` | UUID cùng giá trị trong `mobile/.env` | Text / Plain text | `preview` |
-| `GOOGLE_SERVICES_JSON` | Chọn file `mobile/google-services.smartbin.json` | File / Secret | `preview` |
+| `GOOGLE_SERVICES_JSON` | Chọn file `mobile/google-services.json` | File / Secret | `preview` |
 
 Với biến kiểu file, dùng nút/biểu tượng upload cạnh ô Value để chọn file; không nhập đường dẫn Windows vào Value. Chọn **preview** bên dưới rồi **Add variables**. Kiểm tra danh sách có đủ hai tên và nhãn môi trường preview.
 

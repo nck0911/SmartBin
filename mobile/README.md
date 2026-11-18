@@ -2,6 +2,8 @@
 
 Ứng dụng React Native + Expo + TypeScript để theo dõi mức đầy, tình trạng mùi và quản lý danh sách thùng rác.
 
+Thùng mới (nhập tay hoặc QR) được xác minh với backend trước khi lưu. Bên triển khai đặt `EXPO_PUBLIC_BACKEND_URL` trong `mobile/.env`, rồi khởi động lại Expo. Bản phát hành yêu cầu HTTPS. Khi phát triển trên cùng Wi-Fi, có thể dùng `http://<IP-noi-bo-may-tinh>:8787` và đặt `HOST=0.0.0.0` trong `backend/.env`. App chỉ cho phép HTTP tới IP mạng riêng khi `__DEV__` bật. Không dùng `localhost` của máy tính làm địa chỉ trên điện thoại. Xem cách chạy dịch vụ trong [backend/README.md](../backend/README.md). Backend không truy cập được thì app giữ form và chưa thêm thùng. Mã thiết bị/topic được đối chiếu với danh sách hệ thống; tên và vị trí do người dùng tự đặt.
+
 Hướng dẫn từ bản clone mới, gồm các bước trên giao diện Expo/Firebase: [Cấu hình toàn bộ dự án](../docs/SETUP.md).
 
 ## Mục lục
@@ -25,7 +27,7 @@ npm ci
 Copy-Item .env.example .env
 ```
 
-Chạy `npm ci` lần đầu hoặc sau khi dependencies thay đổi. Khi đã có `.env`, giữ cấu hình hiện tại. Expo Go và chế độ minh họa chạy được khi để trống `EAS_PROJECT_ID`.
+Chạy `npm ci` lần đầu hoặc sau khi dependencies thay đổi. Khi đã có `.env`, giữ cấu hình hiện tại. Expo Go chạy được khi để trống `EAS_PROJECT_ID`.
 
 <a id="run"></a>
 ## Chạy ứng dụng
@@ -44,16 +46,16 @@ Cài Expo Go tương thích SDK trong `package.json`, cho điện thoại và m�
 
 Với LDPlayer, dùng `adb connect` đến địa chỉ ADB của máy ảo, kiểm tra bằng `adb devices`, sau đó chạy `npm run android`.
 
-Bật **Chế độ minh họa** để trải nghiệm mà không cần ESP32. Nhấn `Ctrl+C` để dừng; dùng `npm start -- --clear` khi cần xóa cache Metro. Nếu PowerShell chặn `npm.ps1`, dùng `npm.cmd`.
+App nhận dữ liệu MQTT từ ESP32 hoặc Wokwi. Nhấn `Ctrl+C` để dừng; dùng `npm start -- --clear` khi cần xóa cache Metro. Nếu PowerShell chặn `npm.ps1`, dùng `npm.cmd`.
 
 <a id="connect"></a>
 ## Kết nối thùng rác
 
 1. Build firmware và chạy Wokwi theo [README chính](../README.md#getting-started).
-2. Tắt chế độ minh họa trong app.
-3. Chọn broker WebSocket tương ứng; mặc định là `wss://broker.hivemq.com:8884/mqtt`.
+2. Chạy backend để xác minh thùng khi thêm.
+3. Bên triển khai đặt `EXPO_PUBLIC_MQTT_URL` trong `mobile/.env`, khớp `APP_BROKER_URL` của backend, rồi khởi động lại Expo. App không lấy broker từ cấu hình cũ trên điện thoại và không có màn nhập địa chỉ. Không có URL hợp lệ thì app báo lỗi cấu hình, không tự dùng broker mặc định.
 4. Thêm thùng với device ID và topic root khớp cấu hình firmware.
-5. Nếu thùng chưa có chiều cao, mở chi tiết → **Thiết lập**, nhập số đo, xác nhận thiết lập một lần và chờ thiết bị phản hồi. Thùng đã cấu hình không hiện phần nhập chiều cao.
+5. App lấy chiều cao hệ thống từ backend và tự đồng bộ khi thiết bị online, có dữ liệu mới và chưa được thiết lập.
 
 App nhận trạng thái để theo dõi; firmware tự điều khiển nắp. Xem [cách tính mức đầy](../docs/BIN_HEIGHT.md).
 
@@ -63,7 +65,7 @@ App nhận trạng thái để theo dõi; firmware tự điều khiển nắp. X
 Profile `preview` trong `eas.json` đã tạo APK cài độc lập. Thiết lập một lần cho project của bạn:
 
 1. Sao chép `.env.example` thành `.env` nếu chưa có, điền `EAS_PROJECT_ID` của project Expo.
-2. Đặt `google-services.smartbin.json` tại `mobile/` khi dùng Firebase Android. Application ID đăng ký trên Firebase phải khớp `com.smartbin.mobile` trong `app.config.js`.
+2. Đặt `google-services.json` tại `mobile/` khi dùng Firebase Android. Application ID đăng ký trên Firebase phải khớp `com.smartbin.mobile` trong `app.config.js`.
 3. Trên Expo Dashboard → **Environment variables**, thêm `EAS_PROJECT_ID` kiểu text (Plain text) và `GOOGLE_SERVICES_JSON` kiểu file vào môi trường **preview**. Chọn file cấu hình Android ở bước trên cho biến kiểu file.
 4. Hoàn tất cấu hình ký Android theo hướng dẫn của EAS. Nếu cần push, làm thêm [thiết lập thông báo](../docs/NOTIFICATIONS.md).
 

@@ -17,7 +17,7 @@ Nếu chưa có cấu hình, bắt đầu từ [hướng dẫn toàn bộ dự �
 1. Tại `mobile/`, chạy `npm ci` lần đầu rồi `npm start`.
 2. Quét QR bằng Expo Go, mở **Thông báo → Thiết lập thông báo**.
 3. Chọn **Bật khi đang mở app**, cho phép thông báo và chọn **Gửi thông báo thử**.
-4. Giữ app ở foreground, chạy Wokwi rồi tạo cảnh báo đầy hoặc mùi. Có thể dùng chế độ minh họa để thử giao diện.
+4. Giữ app ở foreground, chạy Wokwi rồi tạo cảnh báo đầy hoặc mùi.
 
 Chế độ này tạo thông báo hệ thống khi app đang nhận dữ liệu. Bản web chỉ hiển thị cảnh báo trong giao diện.
 
