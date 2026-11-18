@@ -12,6 +12,8 @@ Các mã thiết bị và topic dùng tiền tố SmartBin; build lại firmware
 Mức đầy xuất hiện sau khi app tự đồng bộ chiều cao hệ thống xuống mạch chưa thiết lập và cảm biến cập nhật khi nắp đóng.
 Các giá trị ban đầu phục vụ minh họa; có thể chỉnh cảm biến riêng trong từng cửa sổ.
 
+Mỗi sơ đồ có thêm biến trở `battery` trên GPIO35 để thử mức pin và cảnh báo dashboard. Xem [mô phỏng pin](BATTERY.md).
+
 ## Build một lần
 
 Tại thư mục gốc dự án, chạy trong PlatformIO terminal:

@@ -52,6 +52,7 @@ Phạm vi hiện tại là mô phỏng và demo. Tín hiệu mùi được giả
 - **Quản lý danh sách:** thêm, sửa, xóa thông tin thùng và vị trí.
 - **Tìm kiếm và lọc:** tìm theo tên/vị trí, lọc thùng có cảnh báo.
 - **Theo dõi trực quan:** thanh mức đầy, tình trạng mùi, cảnh báo và tổng quan danh sách.
+- **Pin mô phỏng:** mức pin và cảnh báo pin yếu trên card dashboard, nhận từ firmware qua MQTT. Xem [cách thử pin trong Wokwi](docs/BATTERY.md).
 - **Xem chi tiết:** thông tin thiết bị, lệnh nắp và thời gian nhận dữ liệu gần nhất.
 - **Nhận biết trạng thái:** phân biệt mất kết nối, thiết bị offline, chờ dữ liệu và dữ liệu cũ.
 - **Lưu danh sách:** giữ thông tin thùng trên thiết bị để sử dụng khi mở lại ứng dụng.
