@@ -309,7 +309,7 @@ export default function Monitor() {
         {!bin && (
           <>
             <Image source={require('./assets/smartbin-logo.png')} style={s.brandLogo} resizeMode="contain" accessible accessibilityLabel="SmartBin" />
-            <Text style={s.title}>Không gian sạch</Text>
+            <Text style={s.tagline}>Cho không gian sạch hơn mỗi ngày</Text>
           </>
         )}
         {!!m.error && <Text style={s.warning}>{m.error}</Text>}
@@ -353,7 +353,7 @@ export default function Monitor() {
                   : "Chưa có"}
               </Text>
               <Text style={s.muted}>
-                Lệnh nắp:{" "}
+                Trạng thái nắp:{" "}
                 {m.readings[bin.id]?.data
                   ? m.readings[bin.id].data!.lid_command === "open"
                     ? "Mở"
@@ -421,7 +421,7 @@ export default function Monitor() {
               >
                 <View style={s.row}>
                   <Text style={s.heading}>{b.name}</Text>
-                  <Text style={s.link}>Xem →</Text>
+                  <View accessible={false} style={s.cardChevron} />
                 </View>
                 <Text style={s.muted}>{b.location}</Text>
                 <Text style={s.badge}>
@@ -437,7 +437,7 @@ export default function Monitor() {
             )}
           </>
         )}
-        <NotificationSettings state={notifications} alertsOnly={filter} onAlertsOnlyChange={setFilter} showAlertFilter={!selected} />
+        {!selected && <NotificationSettings state={notifications} alertsOnly={filter} onAlertsOnlyChange={setFilter} showAlertFilter />}
         <Text style={s.footer}>
           © {new Date().getFullYear()} SmartBin
         </Text>
@@ -572,7 +572,9 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
   },
-  brandLogo: { width: 240, maxWidth: '100%', height: 80 },
+  brandLogo: { width: 110, maxWidth: '100%', height: 37 },
+  cardChevron: { width: 10, height: 10, borderTopWidth: 1.5, borderRightWidth: 1.5, borderColor: colors.green, transform: [{ rotate: "45deg" }], marginRight: 4 },
+  tagline: { fontSize: 26, fontWeight: "800", color: colors.ink },
   title: { fontSize: 30, fontWeight: "800", color: colors.ink },
   label: { fontSize: 14, fontWeight: "600", color: colors.ink, flexShrink: 1 },
   muted: { fontSize: 15, lineHeight: 23, color: colors.muted },
@@ -644,7 +646,6 @@ const s = StyleSheet.create({
     gap: 16,
   },
   summaryNumber: { fontSize: 38, fontWeight: "800", color: colors.green },
-  link: { fontSize: 14, color: colors.green, fontWeight: "600" },
   note: { fontSize: 13, lineHeight: 20, color: colors.muted },
   footer: {
     fontSize: 11,
