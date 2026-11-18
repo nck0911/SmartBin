@@ -1,19 +1,21 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Linking,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import { Camera } from "expo-camera";
 import { Bin, Reading, status, validateBin } from "./src/model";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMonitorContext } from "./src/MonitorContext";
@@ -21,6 +23,7 @@ import { BinHeightSettings } from "./src/BinHeightSettings";
 import { NotificationSettings } from "./src/NotificationSettings";
 import { BinQrScanner } from "./src/components/BinQrScanner";
 import { ConfirmationDialog } from "./src/components/ConfirmationDialog";
+import { verifyBin } from "./src/verifyBin";
 const colors = {
   bg: "#F3F6F3",
   ink: "#183B30",
@@ -35,23 +38,27 @@ function Button({
   danger = false,
   secondary = false,
   fill = false,
+  disabled = false,
 }: {
   title: string;
   onPress: () => void;
   danger?: boolean;
   secondary?: boolean;
   fill?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
+      disabled={disabled}
+      accessibilityState={{ disabled }}
       style={({ pressed }) => [
         s.button,
         fill && s.actionButton,
         secondary && s.secondaryButton,
         danger && s.dangerButton,
-        { opacity: pressed ? 0.6 : 1 },
+        { opacity: disabled ? 0.5 : pressed ? 0.6 : 1 },
       ]}
     >
       <Text
@@ -70,10 +77,12 @@ function Field({
   label,
   value,
   onChangeText,
+  editable = true,
 }: {
   label: string;
   value: string;
   onChangeText: (v: string) => void;
+  editable?: boolean;
 }) {
   return (
     <View style={{ gap: 8 }}>
@@ -81,15 +90,17 @@ function Field({
       <TextInput
         accessibilityLabel={label}
         value={value}
+        editable={editable}
+        accessibilityState={{ disabled: !editable }}
         onChangeText={onChangeText}
-        style={s.input}
+        style={[s.input, !editable && { backgroundColor: colors.pale, color: colors.muted }]}
         autoCapitalize="none"
         autoCorrect={false}
       />
     </View>
   );
 }
-function Metrics({ reading }: { reading?: Reading }) {
+function Metrics({ reading, systemHeight = false }: { reading?: Reading; systemHeight?: boolean }) {
   const d = reading?.data;
   const valid = d?.configured && d.trash_valid && d.fill_percent !== null;
   return (
@@ -113,7 +124,7 @@ function Metrics({ reading }: { reading?: Reading }) {
           }}
         />
       </View>
-      {d && !d.configured && (
+      {d && !d.configured && !systemHeight && (
         <Text style={s.warning}>
           {d.settings_session
             ? "Nhập chiều cao thùng để xem mức đầy."
@@ -155,23 +166,50 @@ export default function Monitor() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState(false);
   const [form, setForm] = useState<Bin>();
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [editing, setEditing] = useState<string>();
   const [error, setError] = useState("");
-  const [settings, setSettings] = useState(false);
-  const [url, setUrl] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Bin>();
   const [scanning, setScanning] = useState(false);
+  const openingScanner = useRef(false);
+  async function openScanner() {
+    if (openingScanner.current) return;
+    openingScanner.current = true;
+    try {
+      let permission = await Camera.getCameraPermissionsAsync();
+      if (!permission.granted && permission.canAskAgain) permission = await Camera.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Chưa có quyền camera', 'Cho phép camera để quét mã QR thùng rác.', [
+          { text: 'Để sau', style: 'cancel' },
+          ...(!permission.canAskAgain ? [{ text: 'Mở cài đặt', onPress: () => { void Linking.openSettings().catch(() => setError('Không mở được cài đặt quyền camera.')); } }] : []),
+        ]);
+        return;
+      }
+      setError('');
+      setScanning(true);
+    } catch {
+      Alert.alert('Không mở được camera', 'Không kiểm tra được quyền camera. Vui lòng thử lại.');
+    } finally {
+      openingScanner.current = false;
+    }
+  }
+  const [fromQr, setFromQr] = useState(false);
   function scanned(b: Bin) {
     setScanning(false);
     const existing = m.bins.find((x) => x.id === b.id);
     if (existing) {
-      if (existing.topic === b.topic && b.heightCm !== undefined) {
-        m.setBins(old => old.map(x => x.id === b.id ? { ...x, heightCm: b.heightCm } : x));
+      setForm(undefined);
+      if (existing.topic === b.topic) {
+        void verifyBin(existing, m.broker, process.env.EXPO_PUBLIC_BACKEND_URL, fetch, __DEV__).then(result => {
+          m.setBins(old => old.map(x => x.id === b.id ? { ...x, heightCm: result.heightCm, heightSource: 'system' } : x));
+        }).catch(reason => Alert.alert('Không lấy được chiều cao thùng', reason instanceof Error ? reason.message : 'Vui lòng thử lại.'));
       }
       openBin(existing.id);
       return;
     }
     setEditing(undefined);
+    setFromQr(true);
     setForm(b);
     setError("");
   }
@@ -186,13 +224,14 @@ export default function Monitor() {
       `${b.name} ${b.location}`.toLowerCase().includes(query.toLowerCase()) &&
       (!filter || alerts.includes(b)),
   );
-  function edit(b?: Bin) {
-    setEditing(b?.id);
-    setForm(b ? { ...b } : { id: "", name: "", location: "", topic: "" });
+  function edit(b: Bin) {
+    setFromQr(false);
+    setEditing(b.id);
+    setForm({ ...b });
     setError("");
   }
-  function save() {
-    if (!form) return;
+  async function save() {
+    if (!form || savingRef.current) return;
     const original = editing ? m.bins.find((b) => b.id === editing) : undefined;
     if (editing && !original) {
       setError("Thùng này không còn trong danh sách theo dõi.");
@@ -212,16 +251,28 @@ export default function Monitor() {
       setError(problem);
       return;
     }
-    m.setBins((old) =>
-      editing
-        ? old.map((b) =>
-            b.id === editing
-              ? { ...b, name: clean.name, location: clean.location }
-              : b,
-          )
-        : [...old, clean],
-    );
-    setForm(undefined);
+    savingRef.current = true;
+    setSaving(true);
+    setError('');
+    try {
+      if (!editing) {
+        const verified = await verifyBin(clean, m.broker, process.env.EXPO_PUBLIC_BACKEND_URL, fetch, __DEV__);
+        clean.heightCm = verified.heightCm;
+        clean.heightSource = 'system';
+      }
+      m.setBins((old) =>
+        editing
+          ? old.map((b) =>
+              b.id === editing
+                ? { ...b, name: clean.name, location: clean.location }
+                : b,
+            )
+          : [...old, clean],
+      );
+      setForm(undefined);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Chưa xác minh được thùng. Vui lòng thử lại.');
+    } finally { savingRef.current = false; setSaving(false); }
   }
   function remove() {
     if (bin) setDeleteTarget(bin);
@@ -260,7 +311,6 @@ export default function Monitor() {
             <Text style={s.title}>Không gian sạch</Text>
           </>
         )}
-        {m.demo && <Text style={s.badge}>DEMO · Dữ liệu minh họa</Text>}
         {!!m.error && <Text style={s.warning}>{m.error}</Text>}
         {!m.ready ? (
           <ActivityIndicator accessibilityLabel="Đang tải danh sách" />
@@ -272,13 +322,12 @@ export default function Monitor() {
               <Text style={s.badge}>
                 {status(m.readings[bin.id], m.connected, m.now)}
               </Text>
-              <Metrics reading={m.readings[bin.id]} />
+              <Metrics reading={m.readings[bin.id]} systemHeight={bin.heightSource === 'system'} />
             </View>
             <BinHeightSettings
               key={bin.id}
               bin={bin}
               reading={m.readings[bin.id]}
-              demo={m.demo}
               connected={m.connected}
               now={m.now}
               saveHeight={m.saveHeight}
@@ -286,9 +335,8 @@ export default function Monitor() {
             <View style={s.card}>
               <Text style={s.heading}>Thông tin thiết bị</Text>
               <Text style={s.muted}>
-                Chiều cao trên thiết bị: {m.readings[bin.id]?.data?.bin_height_cm != null ? `${m.readings[bin.id].data!.bin_height_cm} cm` : 'Chưa xác nhận'}
+                Chiều cao thùng: {bin.heightSource === 'system' && bin.heightCm !== undefined ? `${bin.heightCm} cm` : m.readings[bin.id]?.data?.bin_height_cm != null ? `${m.readings[bin.id].data!.bin_height_cm} cm` : 'Chưa xác nhận'}
               </Text>
-              {bin.heightCm !== undefined && <Text style={s.muted}>Chiều cao từ QR: {bin.heightCm} cm</Text>}
               <Text selectable style={s.muted}>
                 Mã thiết bị: {bin.id}
               </Text>
@@ -344,13 +392,13 @@ export default function Monitor() {
             </View>
             <View style={s.row}>
               <Text style={s.heading}>Danh sách thùng</Text>
-              <Button title="Quét QR" onPress={() => setScanning(true)} />
+              <Button title="+ Thêm thùng rác" onPress={() => {
+                setEditing(undefined);
+                setFromQr(false);
+                setForm({ id: "", name: "", location: "", topic: "" });
+                setError("");
+              }} />
             </View>
-            <Button
-              title="Nhập thông tin thủ công"
-              secondary
-              onPress={() => edit()}
-            />
             <TextInput
               accessibilityLabel="Tìm thùng theo tên hoặc vị trí"
               placeholder="Tìm theo tên hoặc vị trí…"
@@ -359,14 +407,6 @@ export default function Monitor() {
               onChangeText={setQuery}
               style={s.input}
             />
-            <View style={s.row}>
-              <Text style={s.label}>Chỉ hiện thùng có cảnh báo</Text>
-              <Switch
-                accessibilityLabel="Chỉ hiện thùng có cảnh báo"
-                value={filter}
-                onValueChange={setFilter}
-              />
-            </View>
             {visible.map((b) => (
               <Pressable
                 key={b.id}
@@ -386,64 +426,17 @@ export default function Monitor() {
                 <Text style={s.badge}>
                   {status(m.readings[b.id], m.connected, m.now)}
                 </Text>
-                <Metrics reading={m.readings[b.id]} />
+                <Metrics reading={m.readings[b.id]} systemHeight={b.heightSource === 'system'} />
               </Pressable>
             ))}
             {!visible.length && (
-              <View style={s.card}>
-                <Text style={s.heading}>
-                  {m.bins.length
-                    ? "Chưa có thùng phù hợp"
-                    : "Thêm thùng đầu tiên"}
-                </Text>
-                <Text style={s.muted}>
-                  Quét QR để thêm thùng hoặc thay đổi bộ lọc.
-                </Text>
+              <View style={[s.card, s.emptyCard]}>
+                <Text style={s.muted}>Hiện chưa có thùng rác nào</Text>
               </View>
             )}
-            <View style={s.card}>
-              <View style={s.row}>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.label}>Chế độ minh họa</Text>
-                  <Text style={s.note}>
-                    Dùng dữ liệu mẫu để trải nghiệm ứng dụng.
-                  </Text>
-                </View>
-                <Switch
-                  accessibilityLabel="Chế độ minh họa"
-                  value={m.demo}
-                  onValueChange={m.setDemo}
-                />
-              </View>
-              {m.demo && (
-                <Button
-                  title="Thêm thùng demo có cảnh báo"
-                  onPress={() => {
-                    const id = `demo-${Date.now()}`;
-                    m.setBins((old) => [
-                      ...old,
-                      {
-                        id,
-                        name: "Thùng minh họa",
-                        location: "Khu vực demo",
-                        topic: `demo/${id}`,
-                      },
-                    ]);
-                  }}
-                />
-              )}
-              <Button
-                title="Cấu hình kết nối"
-                onPress={() => {
-                  setUrl(m.broker);
-                  setError("");
-                  setSettings(true);
-                }}
-              />
-            </View>
           </>
         )}
-        <NotificationSettings state={notifications} />
+        <NotificationSettings state={notifications} alertsOnly={filter} onAlertsOnlyChange={setFilter} showAlertFilter={!selected} />
         <Text style={s.footer}>
           © {new Date().getFullYear()} SmartBin
         </Text>
@@ -462,11 +455,11 @@ export default function Monitor() {
         onConfirm={confirmRemove}
       />
       <Modal
-        visible={!!form || settings}
+        visible={!scanning && !!form}
         animationType="slide"
         onRequestClose={() => {
+          if (savingRef.current) return;
           setForm(undefined);
-          setSettings(false);
         }}
       >
         <SafeAreaView style={s.safe}>
@@ -478,27 +471,26 @@ export default function Monitor() {
               contentContainerStyle={s.page}
               keyboardShouldPersistTaps="handled"
             >
-              <Text style={s.title}>
-                {settings
-                  ? "Kết nối dịch vụ"
-                  : editing
-                    ? "Sửa thùng rác"
-                    : "Thêm thùng rác"}
+              <View style={s.formHeader}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Quay lại"
+                disabled={saving}
+                onPress={() => setForm(undefined)}
+                style={({ pressed }) => [s.backButton, { opacity: pressed ? 0.6 : 1 }]}
+              >
+                <View accessible={false} style={s.backChevron} />
+              </Pressable>
+              <Text style={[s.title, { flex: 1 }]}>
+                {editing ? "Sửa thùng rác" : "Thêm thùng rác"}
               </Text>
+              </View>
               <Text style={s.muted}>
-                {settings
-                  ? "Sử dụng địa chỉ kết nối được cung cấp khi thiết lập hệ thống."
-                  : editing
+                {editing
                     ? "Đặt tên và vị trí để dễ nhận biết thùng."
                     : "Mã thiết bị và đường dẫn dữ liệu cần khớp cấu hình của thùng."}
               </Text>
-              {settings ? (
-                <Field
-                  label="Địa chỉ kết nối"
-                  value={url}
-                  onChangeText={setUrl}
-                />
-              ) : (
+              {(
                 form &&
                 (editing
                   ? (["name", "location"] as const)
@@ -515,12 +507,12 @@ export default function Monitor() {
                       }[key]
                     }
                     value={form[key]}
-                    onChangeText={(v) => setForm({ ...form, [key]: v })}
+                    editable={!saving && (!!editing || !fromQr || key === "name" || key === "location")}
+                    onChangeText={(v) => {
+                      if (!saving && (editing || !fromQr || key === "name" || key === "location")) setForm({ ...form, [key]: v });
+                    }}
                   />
                 ))
-              )}
-              {!settings && form?.heightCm !== undefined && (
-                <Text style={s.note}>Chiều cao từ QR: {form.heightCm} cm. Sau khi thêm thùng, mở chi tiết và xác nhận thiết lập trên thiết bị.</Text>
               )}
               {!!error && (
                 <Text accessibilityRole="alert" style={s.alert}>
@@ -529,38 +521,18 @@ export default function Monitor() {
               )}
               <View style={s.actions}>
                 <Button
-                  title="Lưu thay đổi"
+                  title={saving ? "Đang xác minh…" : editing ? "Lưu thay đổi" : "Lưu thông tin"}
+                  disabled={saving}
                   fill
-                  onPress={() => {
-                    if (!settings) return save();
-                    try {
-                      const parsed = new URL(url.trim());
-                      if (
-                        parsed.protocol !== "wss:" ||
-                        !parsed.hostname ||
-                        parsed.username ||
-                        parsed.password ||
-                        parsed.hash
-                      )
-                        throw Error();
-                      m.setBroker(url.trim());
-                      setSettings(false);
-                    } catch {
-                      setError(
-                        "Địa chỉ kết nối phải bắt đầu bằng wss:// và không kèm thông tin đăng nhập.",
-                      );
-                    }
-                  }}
+                  onPress={() => { void save(); }}
                 />
-                <Button
-                  title="Hủy"
+                {!editing ? <Button
+                  title="Quét QR"
+                  disabled={saving}
                   secondary
                   fill
-                  onPress={() => {
-                    setForm(undefined);
-                    setSettings(false);
-                  }}
-                />
+                  onPress={() => { void openScanner(); }}
+                /> : null}
               </View>
             </ScrollView>
           </KeyboardAvoidingView>
@@ -570,18 +542,18 @@ export default function Monitor() {
   );
 }
 const s = StyleSheet.create({
+  emptyCard: { borderStyle: "dashed", borderColor: "#A8BBB0", backgroundColor: "transparent", alignItems: "center", paddingVertical: 32 },
+  formHeader: { flexDirection: "row", alignItems: "center", gap: 4, marginLeft: -12 },
+  backButton: { width: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
+  backChevron: { width: 11, height: 11, borderLeftWidth: 1.5, borderBottomWidth: 1.5, borderColor: colors.ink, transform: [{ rotate: "45deg" }] },
   actions: { flexDirection: "row", gap: 12, alignItems: "stretch" },
   actionButton: { flex: 1, minWidth: 0, minHeight: 48 },
   dangerButton: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: colors.red,
+    backgroundColor: "#FBE5DF",
   },
   dangerText: { color: colors.red },
   secondaryButton: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: colors.green,
+    backgroundColor: "#DCECE3",
   },
   secondaryText: { color: colors.green },
   safe: { flex: 1, backgroundColor: colors.bg },

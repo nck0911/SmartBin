@@ -13,8 +13,6 @@ export function parseBinQr(raw: string): Bin {
   const bin: Bin = { id: data.id.trim(), name: data.name.trim(), location: data.location.trim(), topic: data.topic.trim() };
   if ('heightCm' in data) bin.heightCm = data.heightCm;
   const problem = validateBin(bin, []);
-  if (problem || /[\s/+#\u0000-\u001f]/.test(bin.id) || /[\u0000-\u001f]/.test(bin.topic)) {
-    throw new Error(problem || 'Mã thiết bị hoặc đường dẫn dữ liệu không hợp lệ.');
-  }
+  if (problem) throw new Error(problem);
   return bin;
 }

@@ -27,10 +27,9 @@ test('QR height uses centimetres, accepts tenths and rejects invalid measurement
     assert.throws(() => parseBinQr(JSON.stringify({ ...payload, heightCm })));
   }
 });
-test('rejects unrelated, unsupported, incomplete and unsafe QR payloads', () => {
+test('rejects unrelated, unsupported and incomplete QR payloads', () => {
   for (const data of [null, [], {}, { ...payload, version: 2 }, { ...payload, type: 'url' },
-    { ...payload, id: 123 }, { ...payload, id: 'a/b' }, { ...payload, topic: 'bins/#' },
-    { ...payload, topic: 'a\u0000b' }, { ...payload, name: '' }]) {
+    { ...payload, id: 123 }, { ...payload, name: '' }]) {
     assert.throws(() => parseBinQr(JSON.stringify(data)));
   }
   assert.throws(() => parseBinQr('https://example.com'));

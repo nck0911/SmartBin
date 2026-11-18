@@ -1,11 +1,23 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HeightRequests, heightCommand, parseHeight } from '../src/heightSettings.ts';
+import { HeightRequests, heightCommand, parseHeight, systemHeightToApply } from '../src/heightSettings.ts';
 import { decode } from '../src/model.ts';
 
 const data = { schema: 1 as const, device_id: 'a', fill_percent: 50, gas_adc: 1200, trash_valid: true, trash_stale: false, gas_valid: true, full: false, gas_high: false, lid_command: 'closed' as const, uptime_ms: 2000, configured: true, bin_height_cm: 45, settings_session: 123 };
 const reading = { data: { ...data, configured: false, bin_height_cm: null, fill_percent: null }, receivedAt: 1000, liveAt: 1000 };
 const response = (id = 'save_1', device = 'a', ok = true) => JSON.stringify({ device_id: device, request_id: id, height_mm: 450, ok, error: ok ? '' : 'storage' });
+
+test('only verified system height can provision a fresh unconfigured device', () => {
+  const bin = { id: 'a', name: 'Thùng', location: 'Sân', topic: 'bins/a', heightCm: 60, heightSource: 'system' as const };
+  assert.equal(systemHeightToApply(bin, reading, true, 2000), 600);
+  assert.equal(systemHeightToApply({ ...bin, heightSource: undefined }, reading, true, 2000), null);
+  assert.equal(systemHeightToApply(bin, { ...reading, data }, true, 2000), null);
+  assert.equal(systemHeightToApply(bin, reading, false, 2000), null);
+  assert.equal(systemHeightToApply(bin, reading, true, 17000), null);
+  assert.equal(systemHeightToApply(bin, { ...reading, liveAt: undefined }, true, 2000), null);
+  assert.equal(systemHeightToApply(bin, { ...reading, availability: 'offline' }, true, 2000), null);
+  assert.equal(systemHeightToApply({ ...bin, heightCm: 0 }, reading, true, 2000), null);
+});
 
 test('height input accepts centimetres and Vietnamese decimal separators, rejects invalid values', () => {
   assert.equal(parseHeight('45'), 450);

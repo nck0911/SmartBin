@@ -5,9 +5,9 @@ import type { Bin, Reading } from './model';
 import { parseHeight } from './heightSettings';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
 
-type Props = { bin: Bin; reading?: Reading; demo: boolean; connected: boolean; now: number; saveHeight: (bin: Bin, mm: number) => Promise<void> };
+type Props = { bin: Bin; reading?: Reading; connected: boolean; now: number; saveHeight: (bin: Bin, mm: number) => Promise<void> };
 
-export function BinHeightSettings({ bin, reading, demo, connected, now, saveHeight }: Props) {
+export function BinHeightSettings({ bin, reading, connected, now, saveHeight }: Props) {
   const [open, setOpen] = useState(false);
   const [height, setHeight] = useState('');
   const [pending, setPending] = useState(false);
@@ -22,7 +22,7 @@ export function BinHeightSettings({ bin, reading, demo, connected, now, saveHeig
   const supported = !!data?.settings_session;
   const live = connected && !!reading?.liveAt && now - reading.liveAt <= 15000 && reading.availability !== 'offline';
   const locked = saved || data?.configured === true;
-  const unavailable = locked || (!demo && (!supported || !live));
+  const unavailable = locked || !supported || !live;
   const needsSetup = data?.configured === false && supported && !saved;
 
   function show() {
@@ -44,14 +44,14 @@ export function BinHeightSettings({ bin, reading, demo, connected, now, saveHeig
     try {
       await saveHeight(bin, mm);
       if (mounted.current) {
-        setSuccess(demo ? 'Đã cập nhật chiều cao minh họa. Thiết bị thật không thay đổi.' : 'Đã cập nhật chiều cao thùng.');
+        setSuccess('Đã cập nhật chiều cao thùng.');
         setSaved(true);
       }
     } catch (reason) {
       if (mounted.current) setError(reason instanceof Error ? reason.message : 'Chưa lưu được thiết lập. Vui lòng thử lại.');
     } finally { saving.current = false; if (mounted.current) setPending(false); }
   }
-  if (!needsSetup && !open) return null;
+  if (bin.heightSource === 'system' || (!needsSetup && !open)) return null;
   return <>
     {needsSetup && <View style={styles.card}>
       <Text style={styles.heading}>Thiết lập thùng</Text>
@@ -64,7 +64,7 @@ export function BinHeightSettings({ bin, reading, demo, connected, now, saveHeig
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.page}>
             <Text style={styles.title}>Thiết lập thùng</Text>
-            <Text style={styles.body}>{bin.name}{demo ? ' · Chế độ minh họa' : ''}</Text>
+            <Text style={styles.body}>{bin.name}</Text>
             <Text style={styles.label}>Chiều cao bên trong thùng (cm)</Text>
             <TextInput accessibilityLabel="Chiều cao bên trong thùng, đơn vị cm" placeholder="Ví dụ: 45" placeholderTextColor="#53685F" keyboardType="decimal-pad" value={height} editable={!pending && !locked} onChangeText={value => { setHeight(value); setError(''); setSuccess(''); setSaved(false); }} style={styles.input}/>
             <Text style={styles.body}>Đo từ mặt dưới nắp khi đóng đến đáy bên trong thùng.</Text>

@@ -1,4 +1,12 @@
-import type { Reading } from './model';
+import type { Bin, Reading } from './model.ts';
+import { validHeightCm } from './model.ts';
+
+export function systemHeightToApply(bin: Bin, reading: Reading | undefined, connected: boolean, now: number): number | null {
+  const data = reading?.data;
+  if (!reading || !connected || bin.heightSource !== 'system' || !validHeightCm(bin.heightCm) || data?.configured !== false || !data.settings_session ||
+      !reading.liveAt || now - reading.liveAt > 15000 || reading.availability === 'offline') return null;
+  return Math.round(bin.heightCm * 10);
+}
 
 export function parseHeight(text: string): number | null {
   const normalized = text.trim().replace(',', '.');

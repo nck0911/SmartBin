@@ -16,7 +16,7 @@ export function MonitorProvider({ children }: { children: React.ReactNode }) {
   const openBin = useCallback((id: string) => {
     router.push({ pathname: '/bin/[id]', params: { id } });
   }, [router]);
-  const notifications = useNotifications(monitor, openBin, monitor.setDemo);
+  const notifications = useNotifications(monitor, openBin);
   return <MonitorContext.Provider value={{ monitor, notifications, openBin }}>{children}</MonitorContext.Provider>;
 }
 

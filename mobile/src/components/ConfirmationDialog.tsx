@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   value: { fontSize: 20, lineHeight: 28, fontWeight: '700', color: '#183B30' },
   actions: { flexDirection: 'row', alignItems: 'stretch', gap: 12, padding: 20, paddingTop: 0 },
   button: { flex: 1, minWidth: 0, minHeight: 48, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
-  cancel: { borderWidth: 1, borderColor: '#A8BBB0', backgroundColor: '#FFFFFF' },
+  cancel: { backgroundColor: '#DCECE3' },
   cancelText: { fontSize: 15, fontWeight: '600', color: '#183B30', textAlign: 'center' },
   confirm: { backgroundColor: '#166447' }, danger: { backgroundColor: '#A33526' },
   confirmText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' },

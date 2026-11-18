@@ -43,7 +43,7 @@ function button(tree: Node | null, label: string): Node {
 const props = {
   bin: { id: 'a', name: 'Thùng bếp', location: 'Bếp', topic: 'test/a' },
   reading: { data: { configured: false, settings_session: 1 }, liveAt: 1000 },
-  demo: false, connected: true, now: 1000,
+  connected: true, now: 1000,
 };
 
 test('height confirmation cancel/back preserves input; confirm saves the displayed measurement once', async () => {
