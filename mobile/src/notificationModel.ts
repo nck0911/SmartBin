@@ -1,6 +1,6 @@
 import type { Bin, Reading } from './model';
 
-export type AlertKind = 'full' | 'odor';
+export type AlertKind = 'full' | 'odor' | 'battery_low' | 'battery_critical';
 export type AlertData = { type: 'smartbin-alert'; binId: string; topic: string; brokerUrl: string; kind: AlertKind; eventId: string; demo: boolean };
 export type AlertMessage = { title: string; body: string; data: AlertData };
 export type NotificationSettings = { mode: 'off' | 'local' | 'push'; installationId: string; serverUrl: string; targets: string[] };
@@ -10,7 +10,7 @@ export function alertData(value: unknown): AlertData | null {
   if (!value || typeof value !== 'object') return null;
   const d = value as Record<string, unknown>;
   return d.type === 'smartbin-alert' && typeof d.binId === 'string' && typeof d.topic === 'string' && typeof d.brokerUrl === 'string' &&
-    (d.kind === 'full' || d.kind === 'odor') && typeof d.eventId === 'string' && typeof d.demo === 'boolean' ? d as AlertData : null;
+    ['full', 'odor', 'battery_low', 'battery_critical'].includes(String(d.kind)) && typeof d.eventId === 'string' && typeof d.demo === 'boolean' ? d as AlertData : null;
 }
 export class AlertTracker {
   private states = new Map<string, { full?: boolean; odor?: boolean; receivedAt?: number }>();

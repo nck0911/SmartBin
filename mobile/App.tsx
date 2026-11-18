@@ -25,6 +25,8 @@ import { NotificationSettings } from "./src/NotificationSettings";
 import { BinQrScanner } from "./src/components/BinQrScanner";
 import { ConfirmationDialog } from "./src/components/ConfirmationDialog";
 import { verifyBin } from "./src/verifyBin";
+import { BatteryStatus } from "./src/components/BatteryStatus";
+import { batteryStatus } from "./src/battery";
 const colors = {
   bg: "#F3F6F3",
   ink: "#183B30",
@@ -218,7 +220,8 @@ export default function Monitor() {
   const alerts = m.bins.filter(
     (b) =>
       (m.readings[b.id]?.data?.configured && m.readings[b.id]?.data?.full) ||
-      m.readings[b.id]?.data?.gas_high,
+      m.readings[b.id]?.data?.gas_high ||
+      ['low', 'critical'].includes(batteryStatus(m.readings[b.id], m.connected, m.now).level),
   );
   const visible = m.bins.filter(
     (b) =>
@@ -420,13 +423,14 @@ export default function Monitor() {
                 ]}
               >
                 <View style={s.row}>
-                  <Text style={s.heading}>{b.name}</Text>
-                  <View accessible={false} style={s.cardChevron} />
+                  <Text style={[s.heading, s.cardTitle]} numberOfLines={2}>{b.name}</Text>
+                  <View style={s.cardActions}>
+                    <BatteryStatus reading={m.readings[b.id]} connected={m.connected} now={m.now} />
+                    <View accessible={false} style={s.cardChevron} />
+                  </View>
                 </View>
                 <Text style={s.muted}>{b.location}</Text>
-                <Text style={s.badge}>
-                  {status(m.readings[b.id], m.connected, m.now)}
-                </Text>
+                <Text style={s.badge}>{status(m.readings[b.id], m.connected, m.now)}</Text>
                 <Metrics reading={m.readings[b.id]} systemHeight={b.heightSource === 'system'} />
               </Pressable>
             ))}
@@ -574,6 +578,8 @@ const s = StyleSheet.create({
   },
   brandLogo: { width: 110, maxWidth: '100%', height: 37 },
   cardChevron: { width: 10, height: 10, borderTopWidth: 1.5, borderRightWidth: 1.5, borderColor: colors.green, transform: [{ rotate: "45deg" }], marginRight: 4 },
+  cardTitle: { flex: 1, minWidth: 0 },
+  cardActions: { flexDirection: "row", alignItems: "center", gap: 14, flexShrink: 0 },
   tagline: { fontSize: 26, fontWeight: "800", color: colors.ink },
   title: { fontSize: 30, fontWeight: "800", color: colors.ink },
   label: { fontSize: 14, fontWeight: "600", color: colors.ink, flexShrink: 1 },

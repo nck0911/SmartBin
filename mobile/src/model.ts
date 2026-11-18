@@ -2,7 +2,7 @@ export type Bin = { id: string; name: string; location: string; topic: string; h
 export function validHeightCm(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 10 && value <= 400 && Math.round(value * 10) / 10 === value;
 }
-export type Telemetry = { schema: 1; device_id: string; fill_percent: number | null; gas_adc: number | null; trash_valid: boolean; trash_stale: boolean; gas_valid: boolean; full: boolean; gas_high: boolean; lid_command: 'open' | 'closed'; uptime_ms: number; configured?: boolean; bin_height_cm?: number | null; settings_session?: number };
+export type Telemetry = { schema: 1; device_id: string; fill_percent: number | null; gas_adc: number | null; trash_valid: boolean; trash_stale: boolean; gas_valid: boolean; full: boolean; gas_high: boolean; lid_command: 'open' | 'closed'; uptime_ms: number; configured?: boolean; bin_height_cm?: number | null; settings_session?: number; battery_percent?: number | null; battery_valid?: boolean; battery_low?: boolean; battery_critical?: boolean };
 export type Reading = { data?: Telemetry; receivedAt?: number; liveAt?: number; availability?: string };
 export const initialBin: Bin = { id: 'smartbin-7c91a2-01', name: 'Thùng rác', location: 'Phòng thực hành', topic: 'smartbin/bins/smartbin-7c91a2-01' };
 export function decode(raw: string, id: string): Telemetry | null {
@@ -13,6 +13,11 @@ export function decode(raw: string, id: string): Telemetry | null {
     if (!(d.fill_percent === null || (Number.isFinite(d.fill_percent) && d.fill_percent >= 0 && d.fill_percent <= 100))) return null;
     if (!(d.gas_adc === null || (Number.isInteger(d.gas_adc) && d.gas_adc >= 0 && d.gas_adc <= 4095))) return null;
     if (!Number.isFinite(d.uptime_ms) || d.uptime_ms < 0) return null;
+    if (['battery_percent', 'battery_valid', 'battery_low', 'battery_critical'].some(key => key in d)) {
+      if (!['battery_valid', 'battery_low', 'battery_critical'].every(key => typeof d[key] === 'boolean')) return null;
+      if (d.battery_valid ? !(Number.isInteger(d.battery_percent) && d.battery_percent >= 0 && d.battery_percent <= 100) : d.battery_percent !== null) return null;
+      if (d.battery_critical && !d.battery_low) return null;
+    }
     // Older firmware can still supply gas/status, but cannot supply trusted fill %.
     if (['configured','bin_height_cm','settings_session'].some(k => k in d)) {
       if (typeof d.configured !== 'boolean' || !Number.isInteger(d.settings_session) || d.settings_session <= 0 || d.settings_session > 0xffffffff) return null;
