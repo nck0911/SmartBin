@@ -4,6 +4,7 @@
 #include <initializer_list>
 #include "LidController.h"
 #include "EnvironmentMonitor.h"
+#include "BatteryMonitor.h"
 
 void quickGestureAndBoundary() {
   LidController lid;
@@ -121,6 +122,32 @@ void settingsProtocol() {
   assert(!BinSettings::validHeight(0));
   assert(!BinSettings::validHeight(99));
 }
+void batteryAlarms() {
+  BatteryMonitor battery;
+  assert(!battery.valid && !battery.low && !battery.critical);
+  battery.update(100);
+  assert(battery.valid && battery.percent == 100 && !battery.low);
+  battery.update(20);
+  assert(battery.low && !battery.critical);
+  battery.update(24);
+  assert(battery.low);
+  battery.update(25);
+  assert(!battery.low);
+  battery.update(10);
+  assert(battery.low && battery.critical);
+  battery.update(14);
+  assert(battery.critical);
+  battery.update(15);
+  assert(battery.low && !battery.critical);
+  battery.update(0);
+  assert(battery.valid && battery.low && battery.critical);
+  battery.update(-1);
+  assert(!battery.valid && battery.low && battery.critical);
+  battery.update(101);
+  assert(!battery.valid);
+  battery.update(100);
+  assert(battery.valid && !battery.low && !battery.critical);
+}
 int main() {
   quickGestureAndBoundary();
   closeAndReturn();
@@ -128,5 +155,6 @@ int main() {
   rollover();
   environmentAlarms();
   settingsProtocol();
-  puts("PASS: 6 scenario groups (lid timing, return, failure, rollover, bin height/alarms, settings protocol)");
+  batteryAlarms();
+  puts("PASS: 7 scenario groups (lid timing, return, failure, rollover, bin height/alarms, settings protocol, battery alarms)");
 }

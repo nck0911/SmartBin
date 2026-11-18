@@ -4,6 +4,10 @@ namespace Config {
 constexpr uint8_t handTrig = 5, handEcho = 18;
 constexpr uint8_t trashTrig = 12, trashEcho = 14;
 constexpr uint8_t servoPin = 13, gasPin = 34;
+constexpr uint8_t batteryPin = 35;
+constexpr uint32_t batteryMs = 5000;
+constexpr int batteryLowOn = 20, batteryLowOff = 25;
+constexpr int batteryCriticalOn = 10, batteryCriticalOff = 15;
 constexpr float handThresholdCm = 20.0f;
 constexpr float fullDistanceCm = 5.0f;
 // Distance the sensing face protrudes below the underside of the closed lid.

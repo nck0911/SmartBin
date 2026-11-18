@@ -4,11 +4,16 @@
 #include "EnvironmentMonitor.h"
 #include "UltrasonicSensor.h"
 #include "Telemetry.h"
+#include "BatteryInput.h"
+#include "BatteryMonitor.h"
 namespace {
 UltrasonicSensor hand(Config::handTrig, Config::handEcho);
 UltrasonicSensor trash(Config::trashTrig, Config::trashEcho);
 LidController lid;
 EnvironmentMonitor environment;
+BatteryMonitor battery;
+uint32_t lastBattery = 0;
+bool batterySampled = false;
 constexpr uint8_t servoChannel = 0;
 uint32_t lastTrigger = 0, lastTrash = 0, lastGas = 0, closedAt = 0;
 uint32_t lastLog = 0, sequence = 0;
@@ -23,6 +28,7 @@ void setup() {
   Serial.begin(115200);
   analogReadResolution(12);
   pinMode(Config::gasPin, INPUT);
+  BatteryInput::begin();
   ledcSetup(servoChannel, 50, 16);
   ledcAttachPin(Config::servoPin, servoChannel);
   commandServo(false);
@@ -47,6 +53,13 @@ void loop() {
   hand.poll(now);
   const bool trashDone = trash.poll(now);
   const bool fullBefore = environment.full, gasBefore = environment.gasHigh;
+  const bool batteryLowBefore = battery.low, batteryCriticalBefore = battery.critical;
+  const bool batteryValidBefore = battery.valid;
+  if (!batterySampled || uint32_t(now - lastBattery) >= Config::batteryMs) {
+    batterySampled = true;
+    lastBattery = now;
+    battery.update(BatteryInput::readPercent());
+  }
   const bool handValid = hand.hasSample && hand.valid &&
                          uint32_t(now - hand.sampledAt) <= Config::handFreshMs;
   const bool lidChanged = lid.update(now, handValid, hand.cm);
@@ -94,9 +107,14 @@ void loop() {
   s.full = environment.full;
   s.gasHigh = environment.gasHigh;
   s.heightMm = environment.heightMm;
+  s.batteryPercent = battery.percent;
+  s.batteryValid = battery.valid;
+  s.batteryLow = battery.low;
+  s.batteryCritical = battery.critical;
   static bool oldHandValid = false, oldTrashValid = false, oldStale = true;
   const bool event = settingsChanged || lidChanged || alarmChanged || s.handValid != oldHandValid ||
-                     s.trashValid != oldTrashValid || s.trashStale != oldStale;
+                     s.trashValid != oldTrashValid || s.trashStale != oldStale ||
+                     batteryLowBefore != battery.low || batteryCriticalBefore != battery.critical || batteryValidBefore != battery.valid;
   oldHandValid = s.handValid;
   oldTrashValid = s.trashValid;
   oldStale = s.trashStale;

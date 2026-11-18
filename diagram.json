@@ -7,7 +7,8 @@
     { "type": "wokwi-hc-sr04", "id": "hand", "top": -150, "left": -230, "attrs": { "distance": "50" } },
     { "type": "wokwi-hc-sr04", "id": "trash", "top": 150, "left": -230, "attrs": { "distance": "35" } },
     { "type": "wokwi-servo", "id": "lid", "top": -100, "left": 220, "attrs": {} },
-    { "type": "wokwi-potentiometer", "id": "gas", "top": 160, "left": 220, "attrs": { "value": "0" } }
+    { "type": "wokwi-potentiometer", "id": "gas", "top": 160, "left": 220, "attrs": { "value": "0" } },
+    { "type": "wokwi-potentiometer", "id": "battery", "top": 340, "left": 220, "attrs": { "value": "1023" } }
   ],
   "connections": [
     [ "esp:TX0", "$serialMonitor:RX", "", [] ],
@@ -25,7 +26,10 @@
     [ "esp:D13", "lid:PWM", "orange", [] ],
     [ "esp:3V3", "gas:VCC", "red", [] ],
     [ "esp:GND.1", "gas:GND", "black", [] ],
-    [ "esp:D34", "gas:SIG", "purple", [] ]
+    [ "esp:D34", "gas:SIG", "purple", [] ],
+    [ "esp:3V3", "battery:VCC", "red", [] ],
+    [ "esp:GND.1", "battery:GND", "black", [] ],
+    [ "esp:D35", "battery:SIG", "orange", [] ]
   ],
   "serialMonitor": { "display": "always", "newline": "lf" }
 }

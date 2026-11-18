@@ -10,6 +10,8 @@ struct Snapshot {
   int gas = 0;
   uint32_t handAge = 0, trashAge = 0;
   uint16_t heightMm = 0;
+  int batteryPercent = 0;
+  bool batteryValid = false, batteryLow = false, batteryCritical = false;
 };
 namespace Telemetry {
 uint16_t loadHeight();

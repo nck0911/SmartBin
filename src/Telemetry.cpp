@@ -71,6 +71,8 @@ bool publishSnapshot(const char* topic, const Snapshot& s, bool retained) {
   if (configured) snprintf(height, sizeof(height), "%.1f", s.heightMm / 10.0f);
   if (configured && s.trashValid) snprintf(fill, sizeof(fill), "%.1f", s.fill);
   if (s.gasValid) snprintf(gas, sizeof(gas), "%d", s.gas);
+  char battery[8] = "null";
+  if (s.batteryValid) snprintf(battery, sizeof(battery), "%d", s.batteryPercent);
   if (s.handHasSample) snprintf(handAge, sizeof(handAge), "%lu", (unsigned long)s.handAge);
   if (s.trashHasSample) snprintf(trashAge, sizeof(trashAge), "%lu", (unsigned long)s.trashAge);
   char payload[768];
@@ -79,12 +81,14 @@ bool publishSnapshot(const char* topic, const Snapshot& s, bool retained) {
       "\"lid_command\":\"%s\",\"hand_cm\":%s,\"hand_valid\":%s,\"hand_age_ms\":%s,"
       "\"fill_percent\":%s,\"trash_valid\":%s,\"trash_stale\":%s,\"trash_age_ms\":%s,"
       "\"gas_adc\":%s,\"gas_valid\":%s,\"full\":%s,\"gas_high\":%s,"
-      "\"configured\":%s,\"bin_height_cm\":%s,\"settings_session\":%lu}",
+      "\"configured\":%s,\"bin_height_cm\":%s,\"settings_session\":%lu,"
+      "\"battery_percent\":%s,\"battery_valid\":%s,\"battery_low\":%s,\"battery_critical\":%s}",
       DEVICE_ID, (unsigned long)s.sequence, (unsigned long)s.uptime,
       s.lidOpen ? "open" : "closed", hand, s.handValid ? "true" : "false", handAge,
       fill, s.trashValid ? "true" : "false", s.trashStale ? "true" : "false", trashAge,
       gas, s.gasValid ? "true" : "false", s.full ? "true" : "false", s.gasHigh ? "true" : "false",
-      configured ? "true" : "false", height, (unsigned long)settingsSession);
+      configured ? "true" : "false", height, (unsigned long)settingsSession,
+      battery, s.batteryValid ? "true" : "false", s.batteryLow ? "true" : "false", s.batteryCritical ? "true" : "false");
   return size > 0 && size < int(sizeof(payload)) && mqtt.publish(topic, payload, retained);
 }
 void networkTask(void*) {

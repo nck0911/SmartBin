@@ -43,6 +43,15 @@
       "attrs": {
         "value": "0"
       }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "battery",
+      "top": 340,
+      "left": 220,
+      "attrs": {
+        "value": "1023"
+      }
     }
   ],
   "connections": [
@@ -140,6 +149,24 @@
       "esp:D34",
       "gas:SIG",
       "purple",
+      []
+    ],
+    [
+      "esp:3V3",
+      "battery:VCC",
+      "red",
+      []
+    ],
+    [
+      "esp:GND.1",
+      "battery:GND",
+      "black",
+      []
+    ],
+    [
+      "esp:D35",
+      "battery:SIG",
+      "orange",
       []
     ]
   ],
