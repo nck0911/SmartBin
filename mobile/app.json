@@ -41,6 +41,16 @@
         }
       ]
     ],
-    "scheme": "smartbin"
+    "scheme": "smartbin",
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "5b8bd0c1-878d-4ea6-8465-8245204c4207"
+      }
+    }
   }
 }
