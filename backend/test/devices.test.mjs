@@ -1,0 +1,30 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { Store } from '../src/storage/store.mjs';
+import { createHandler } from '../src/http/handler.mjs';
+
+test('verification checks exact device identity and broker without push registration', async t => {
+  const store = new Store(); t.after(() => store.close());
+  const device = { id: 'bin-a', topic: 'smartbin/bin-a', heightCm: 45 };
+  const broker = 'wss://broker.example/mqtt';
+  const server = createServer(createHandler({ store, pairingCode: 'test-pairing-code-123456', devices: [device], appBrokerUrl: broker }));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  const base = `http://127.0.0.1:${server.address().port}/v1/devices/verify`;
+  const request = changes => fetch(`${base}?${new URLSearchParams({ ...device, brokerUrl: broker, ...changes })}`);
+  const verified = await request({});
+  assert.equal(verified.status, 200);
+  assert.equal(verified.headers.get('access-control-allow-origin'), '*');
+  assert.deepEqual(await verified.json(), { ok: true, ...device });
+  assert.equal((await request({ id: 'other' })).status, 404);
+  assert.equal((await request({ topic: 'other/#' })).status, 404);
+  assert.equal((await request({ topic: 'smartbin/+' })).status, 404);
+  assert.equal((await request({ brokerUrl: 'wss://other.example/mqtt' })).status, 409);
+  assert.equal((await request({ id: ' ' })).status, 400);
+  assert.equal((await request({ id: 'a'.repeat(257) })).status, 400);
+  assert.equal((await fetch(base)).status, 400);
+  assert.equal(store.registrationCount(), 0);
+  delete device.heightCm;
+  assert.equal((await request({})).status, 503);
+});
