@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Linking,
   KeyboardAvoidingView,
   Modal,
@@ -307,7 +308,7 @@ export default function Monitor() {
       >
         {!bin && (
           <>
-            <Text style={s.eyebrow}>SMARTBIN</Text>
+            <Image source={require('./assets/smartbin-logo.png')} style={s.brandLogo} resizeMode="contain" accessible accessibilityLabel="SmartBin" />
             <Text style={s.title}>Không gian sạch</Text>
           </>
         )}
@@ -571,12 +572,7 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
   },
-  eyebrow: {
-    fontSize: 11,
-    letterSpacing: 1.5,
-    fontWeight: "700",
-    color: colors.green,
-  },
+  brandLogo: { width: 240, maxWidth: '100%', height: 80 },
   title: { fontSize: 30, fontWeight: "800", color: colors.ink },
   label: { fontSize: 14, fontWeight: "600", color: colors.ink, flexShrink: 1 },
   muted: { fontSize: 15, lineHeight: 23, color: colors.muted },
