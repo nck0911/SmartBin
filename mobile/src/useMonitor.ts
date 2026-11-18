@@ -5,10 +5,15 @@ import mqtt from 'mqtt';
 import { AppState } from 'react-native';
 import { Bin, Reading, decode, initialBin, validHeightCm } from './model';
 import { HeightRequests, heightCommand } from './heightSettings';
+import { mqttBrokerUrl } from './brokerConfig';
 
 export function useMonitor() {
   const [bins, setBins] = useState<Bin[]>([]);
-  const [broker, setBroker] = useState('wss://broker.hivemq.com:8884/mqtt');
+  const brokerConfig = useMemo(() => {
+    try { return { url: mqttBrokerUrl(process.env.EXPO_PUBLIC_MQTT_URL), error: '' }; }
+    catch (reason) { return { url: '', error: reason instanceof Error ? reason.message : 'Không đọc được cấu hình kết nối dữ liệu.' }; }
+  }, []);
+  const [broker, setBroker] = useState(brokerConfig.url);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const [demo, setDemo] = useState(false);
@@ -26,7 +31,7 @@ export function useMonitor() {
     AsyncStorage.getItem('smartbin-monitor-v1').then(raw => {
       if (!raw) return;
       const saved = JSON.parse(raw);
-      if (Array.isArray(saved.bins) && saved.bins.every((b: Bin) => b && ['id','name','location','topic'].every(k => typeof (b as any)[k] === 'string')) && typeof saved.broker === 'string' && /^wss:\/\//.test(saved.broker)) {
+      if (Array.isArray(saved.bins) && saved.bins.every((b: Bin) => b && ['id','name','location','topic'].every(k => typeof (b as any)[k] === 'string'))) {
         // Remove only the untouched legacy sample once; preserve manually named bins.
         setBins(saved.bins.filter((b: Bin) => saved.onboardingVersion === 2 ||
           !(b.id === initialBin.id && b.topic === initialBin.topic && b.location === initialBin.location &&
@@ -34,7 +39,6 @@ export function useMonitor() {
               const { heightCm, ...base } = b;
               return validHeightCm(heightCm) ? { ...base, heightCm } : base;
             }));
-        setBroker(saved.broker);
       }
     }).catch(() => setError('Không đọc được cấu hình đã lưu.')).finally(() => setReady(true));
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -42,8 +46,8 @@ export function useMonitor() {
     return () => { clearInterval(timer); sub.remove(); };
   }, []);
   useEffect(() => {
-    if (ready) AsyncStorage.setItem('smartbin-monitor-v1', JSON.stringify({ bins, broker, onboardingVersion: 2 })).catch(() => setError('Không lưu được cấu hình.'));
-  }, [ready, bins, broker]);
+    if (ready) AsyncStorage.setItem('smartbin-monitor-v1', JSON.stringify({ bins, onboardingVersion: 2 })).catch(() => setError('Không lưu được cấu hình.'));
+  }, [ready, bins]);
   useEffect(() => {
     const { ready, active, demo, bins, broker, demoHeights } = scope;
     function setConnected(value: boolean) {
@@ -52,7 +56,7 @@ export function useMonitor() {
     function setReadings(update: SetStateAction<Record<string, Reading>>) {
       setStream(old => ({ scope, connected: old.scope === scope && old.connected, readings: typeof update === 'function' ? update(old.scope === scope ? old.readings : {}) : update }));
     }
-    if (!ready || !active) return;
+    if (!ready || !active || !broker) return;
     if (demo) {
       const update = () => {
         const at = Date.now();
@@ -108,5 +112,5 @@ export function useMonitor() {
       client.publish(`${bin.topic}/config/set`, command, { qos: 0, retain: false }, failed);
     });
   }
-  return { bins,setBins,broker,setBroker,readings,connected,ready,error,demo,setDemo,now,saveHeight };
+  return { bins,setBins,broker,setBroker,readings,connected,ready,error: brokerConfig.error || error,demo,setDemo,now,saveHeight };
 }

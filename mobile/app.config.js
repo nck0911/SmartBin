@@ -3,7 +3,7 @@ const path = require('node:path');
 
 module.exports = ({ config }) => {
   const projectId = process.env.EAS_PROJECT_ID;
-  const googleServicesFile = process.env.GOOGLE_SERVICES_JSON || './google-services.smartbin.json';
+  const googleServicesFile = process.env.GOOGLE_SERVICES_JSON || './google-services.json';
   const packageName = 'com.smartbin.mobile';
   const firebasePath = path.resolve(__dirname, googleServicesFile);
   const hasFirebase = fs.existsSync(firebasePath);
