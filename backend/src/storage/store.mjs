@@ -33,13 +33,13 @@ export class Store {
     } catch (error) { this.db.exec('ROLLBACK'); throw error; }
   }
   removeToken(id, token) { if (this.get(id)?.token === token) this.remove(id); }
-  transition(device, topic, kind, active, now) {
+  transition(device, topic, kind, active, now, notify = true) {
     this.db.exec('BEGIN');
     try {
       const previous = this.db.prepare('SELECT active FROM alarms WHERE device=? AND kind=?').get(device, kind);
       this.db.prepare('INSERT INTO alarms VALUES(?,?,?) ON CONFLICT(device,kind) DO UPDATE SET active=excluded.active').run(device, kind, Number(active));
       if (!active) this.db.prepare('DELETE FROM jobs WHERE device=? AND kind=? AND ticket IS NULL').run(device, kind);
-      if (active && !previous?.active) {
+      if (active && !previous?.active && notify) {
         for (const row of this.db.prepare('SELECT * FROM installations').all()) {
           const bin = JSON.parse(row.bins).find(b => b.id === device && b.topic === topic);
           if (bin) this.db.prepare('INSERT INTO jobs(id,installation,device,topic,kind,name,created,due) VALUES(?,?,?,?,?,?,?,?)').run(randomUUID(), row.id, device, topic, kind, bin.name, now, now);
