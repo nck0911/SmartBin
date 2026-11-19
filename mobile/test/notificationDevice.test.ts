@@ -6,14 +6,16 @@ import ts from 'typescript';
 import { alertData } from '../src/notificationModel.ts';
 import { createChannelInitializer, notificationChannelId } from '../src/notificationChannel.ts';
 
-function adapter(expoGo: boolean) {
+function adapter(expoGo: boolean, initiallyGranted = true, canAskAgain = true) {
   let channelCalls = 0;
+  let permissionRequests = 0;
   let scheduled: { trigger: unknown; content: unknown } | undefined;
   const notifications = {
     __esModule: true,
     AndroidImportance: { HIGH: 6 },
     setNotificationHandler() {},
-    async getPermissionsAsync() { return { granted: true, canAskAgain: true }; },
+    async getPermissionsAsync() { return { granted: initiallyGranted, canAskAgain }; },
+    async requestPermissionsAsync() { permissionRequests++; return { granted: true }; },
     async setNotificationChannelAsync() { channelCalls++; throw new Error('native NullPointerException'); },
     async scheduleNotificationAsync(request: { trigger: unknown; content: unknown }) { scheduled = request; return 'notification-1'; },
   };
@@ -32,7 +34,7 @@ function adapter(expoGo: boolean) {
   const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true } }).outputText;
   const exports: Record<string, any> = {};
   runInNewContext(compiled, { exports, require(name: string) { if (!(name in modules)) throw new Error(`Unexpected module ${name}`); return modules[name]; }, setTimeout, clearTimeout, console: { error() {} } });
-  return { device: exports.notificationDevice, channelCalls: () => channelCalls, scheduled: () => scheduled };
+  return { device: exports.notificationDevice, channelCalls: () => channelCalls, scheduled: () => scheduled, permissionRequests: () => permissionRequests };
 }
 
 test('real native adapter uses ExpoGo capability, skips custom channel and creates an immediate local notification', async () => {
@@ -52,4 +54,12 @@ test('standalone native channel failure remains a failure and never reports a no
   await assert.rejects(runtime.device.show({ title: 'Thử', body: 'Thùng', data: {} }), /NullPointerException/);
   assert.equal(runtime.channelCalls(), 1);
   assert.equal(runtime.scheduled(), undefined);
+});
+test('Expo Go requests OS notification permission when needed and respects a blocked permission', async () => {
+  const fresh = adapter(true, false);
+  assert.equal(await fresh.device.permission(), true);
+  assert.equal(fresh.permissionRequests(), 1);
+  const blocked = adapter(true, false, false);
+  assert.equal(await blocked.device.permission(), false);
+  assert.equal(blocked.permissionRequests(), 0);
 });

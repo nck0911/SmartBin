@@ -13,7 +13,7 @@ export function alertData(value: unknown): AlertData | null {
     ['full', 'odor', 'battery_low', 'battery_critical'].includes(String(d.kind)) && typeof d.eventId === 'string' && typeof d.demo === 'boolean' ? d as AlertData : null;
 }
 export class AlertTracker {
-  private states = new Map<string, { full?: boolean; odor?: boolean; receivedAt?: number }>();
+  private states = new Map<string, Partial<Record<AlertKind, boolean>> & { receivedAt?: number }>();
   observe(bin: Bin, reading: Reading | undefined, broker: string, demo: boolean, now: number): AlertMessage[] {
     const d = reading?.data;
     if (!d || reading?.availability === 'offline' || !reading.liveAt || now - reading.liveAt > 15000 || reading.receivedAt !== reading.liveAt) return [];
@@ -25,12 +25,18 @@ export class AlertTracker {
     const values: Partial<Record<AlertKind, boolean>> = {};
     if (d.configured && d.trash_valid && !d.trash_stale && d.fill_percent !== null) values.full = d.full;
     if (d.gas_valid && d.gas_adc !== null) values.odor = d.gas_high;
-    for (const kind of ['full', 'odor'] as const) {
+    if (d.battery_valid === true && Number.isInteger(d.battery_percent) && d.battery_percent! >= 0 && d.battery_percent! <= 100 &&
+        typeof d.battery_low === 'boolean' && typeof d.battery_critical === 'boolean' && (!d.battery_critical || d.battery_low)) {
+      values.battery_low = d.battery_low;
+      values.battery_critical = d.battery_critical;
+    }
+    const titles = { full: 'Thùng rác đã đầy', odor: 'Thùng rác có mùi hôi', battery_low: 'Pin thùng rác yếu', battery_critical: 'Pin thùng rác sắp hết' };
+    for (const kind of ['full', 'odor', 'battery_low', 'battery_critical'] as const) {
       if (values[kind] === undefined) continue;
       next[kind] = values[kind];
-      if (values[kind] && !previous[kind]) events.push({
-        title: `${demo ? 'Thử · ' : ''}${kind === 'full' ? 'Thùng rác đã đầy' : 'Thùng rác có mùi hôi'}`,
-        body: `${bin.name} ${kind === 'full' ? 'cần được thu gom.' : 'cần được kiểm tra và vệ sinh.'}`,
+      if (values[kind] && !previous[kind] && !(kind === 'battery_low' && values.battery_critical)) events.push({
+        title: `${demo ? 'Thử · ' : ''}${titles[kind]}`,
+        body: `${bin.name} ${kind === 'full' ? 'cần được thu gom.' : kind === 'odor' ? 'cần được kiểm tra và vệ sinh.' : 'cần được sạc hoặc thay pin.'}`,
         data: { type: 'smartbin-alert', binId: bin.id, topic: bin.topic, brokerUrl: broker, kind, eventId: `${key}|${kind}|${reading.receivedAt}`, demo },
       });
     }

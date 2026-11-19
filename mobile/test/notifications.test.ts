@@ -34,6 +34,15 @@ test('demo alerts are labeled and independent from live MQTT alarms', () => {
   assert.equal(tracker.observe(bin, reading(2000), broker, false, 2000).length, 2);
   assert.equal(tracker.observe(bin, reading(3000, { configured: false, fill_percent: null }), 'other', false, 3000).length, 1);
 });
+test('local battery alerts notify once per transition and suppress duplicate initial low/critical warnings', () => {
+  const tracker = new AlertTracker();
+  const battery = { full: false, gas_high: false, battery_valid: true, battery_percent: 8, battery_low: true, battery_critical: true };
+  assert.deepEqual(tracker.observe(bin, reading(1000, battery), broker, false, 1000).map(event => event.data.kind), ['battery_critical']);
+  assert.equal(tracker.observe(bin, reading(2000, battery), broker, false, 2000).length, 0);
+  assert.equal(tracker.observe(bin, reading(3000, { ...battery, battery_percent: 15, battery_critical: false }), broker, false, 3000).length, 0);
+  tracker.observe(bin, reading(4000, { ...battery, battery_percent: 30, battery_low: false, battery_critical: false }), broker, false, 4000);
+  assert.deepEqual(tracker.observe(bin, reading(5000, { ...battery, battery_percent: 20, battery_critical: false }), broker, false, 5000).map(event => event.data.kind), ['battery_low']);
+});
 test('notification taps require a valid bin target and a broker identity', () => {
   const event = new AlertTracker().observe(bin, reading(1000), broker, false, 1000)[0];
   assert.equal(alertData(event.data)?.binId, bin.id);

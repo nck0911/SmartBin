@@ -36,9 +36,7 @@ export function useNotifications(monitor: Input, openBin: (id: string) => void) 
       if (!raw) return AsyncStorage.setItem(storageKey, JSON.stringify(initialSettings.current));
       const saved = JSON.parse(raw);
       if (['off', 'local', 'push'].includes(saved.mode) && /^[A-Za-z0-9_-]{16,64}$/.test(saved.installationId) && typeof saved.serverUrl === 'string' && Array.isArray(saved.targets) && saved.targets.every((v: unknown) => typeof v === 'string')) {
-        const next = saved.mode === 'local' ? { ...saved, mode: 'off', targets: [] } : saved;
-        setSettings(next);
-        if (saved.mode === 'local') return AsyncStorage.setItem(storageKey, JSON.stringify(next));
+        setSettings(saved);
       }
     }).catch(() => { if (active) setError('Không đọc được thiết lập thông báo.'); }).finally(() => { if (active) setLoaded(true); });
     return () => { active = false; };
@@ -129,18 +127,20 @@ export function useNotifications(monitor: Input, openBin: (id: string) => void) 
     await persist({ ...next, targets: result.bins.map(bin => targetKey(bin, broker)) });
     setMessage('Đã bật thông báo kể cả khi đóng app.');
   });
-  const enableNotifications = () => perform(async () => {
-    if (!(await notificationDevice.permission())) throw new Error('Hãy cho phép thông báo trong cài đặt điện thoại để tiếp tục.');
-    if (!notificationDevice.supportsPush) throw new Error('Cần bản cài SmartBin riêng để bật thông báo đẩy.');
-    const secret = await notificationDevice.secret();
-    if (!settings.serverUrl || !secret) throw new Error('Dịch vụ thông báo đẩy chưa được thiết lập cho bản ứng dụng này.');
-    const token = await notificationDevice.token();
-    const next = { ...settings, mode: 'push' as const };
-    const result = await registerPush(next, secret, token, bins, broker);
-    await notificationDevice.saveSecret(result.secret);
-    await persist({ ...next, targets: result.bins.map(bin => targetKey(bin, broker)) });
-    setMessage('Đã bật thông báo đẩy.');
-  });
+  const enableNotifications = () => {
+    if (!notificationDevice.supportsPush) return enableLocal();
+    return perform(async () => {
+      if (!(await notificationDevice.permission())) throw new Error('Hãy cho phép thông báo trong cài đặt điện thoại để tiếp tục.');
+      const secret = await notificationDevice.secret();
+      if (!settings.serverUrl || !secret) throw new Error('Dịch vụ thông báo đẩy chưa được thiết lập cho bản ứng dụng này.');
+      const token = await notificationDevice.token();
+      const next = { ...settings, mode: 'push' as const };
+      const result = await registerPush(next, secret, token, bins, broker);
+      await notificationDevice.saveSecret(result.secret);
+      await persist({ ...next, targets: result.bins.map(bin => targetKey(bin, broker)) });
+      setMessage('Đã bật thông báo đẩy.');
+    });
+  };
   const test = () => perform(async () => {
     if (!(await notificationDevice.permission())) throw new Error('Hãy cho phép thông báo trong cài đặt điện thoại.');
     const bin = bins[0];

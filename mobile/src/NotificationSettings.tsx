@@ -9,8 +9,8 @@ export function NotificationSettings({ state, alertsOnly, onAlertsOnlyChange, sh
     <Text style={s.heading}>Cài đặt</Text>
     <View style={s.card}>
     <View style={s.row}>
-      <Text style={s.label}>Bật thông báo đẩy</Text>
-      <Switch accessibilityLabel="Bật thông báo đẩy" disabled={disabled} value={state.settings.mode === 'push'}
+      <Text style={s.label}>Bật thông báo</Text>
+      <Switch accessibilityLabel="Bật thông báo" disabled={disabled} value={state.settings.mode === (state.supportsPush ? 'push' : 'local')}
         onValueChange={enabled => { void (enabled ? state.enableNotifications() : state.disable()); }}
         trackColor={{ false: '#D8E2DB', true: '#166447' }} thumbColor="#FFFFFF" />
     </View>
